@@ -1,0 +1,5 @@
+{
+  "name": "AI Professor - Gemini Edition",
+  "description": "An intelligent courseware assistant that parses PDF lecture slides and acts as a virtual professor to explain concepts, answer questions, and generate quizzes using Google Gemini 2.5 Flash.",
+  "requestFramePermissions": []
+}
