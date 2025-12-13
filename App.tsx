@@ -1005,12 +1005,12 @@ const App: React.FC = () => {
       {/* Header */}
       <header className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border-b border-gray-200/60 dark:border-white/10 px-6 py-3 flex items-center justify-between shadow-sm dark:shadow-black/30 z-20">
         <div className="flex items-center gap-3">
-          <div className="bg-indigo-600 p-2 rounded-lg text-white">
+          <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-sm shadow-indigo-500/20">
             <GraduationCap size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-800 leading-none">AI Professor</h1>
-            <span className="text-xs text-gray-500 font-medium">Web Edition v3.0</span>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-slate-100 leading-none">AI Professor</h1>
+            <span className="text-xs text-gray-500 dark:text-slate-400 font-medium">Web Edition v3.0</span>
           </div>
         </div>
 
@@ -1021,7 +1021,7 @@ const App: React.FC = () => {
              size="sm" 
              onClick={() => setCurrentPage('notes-organizer')} 
              title="整理笔记助手"
-             className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 hover:from-purple-200 hover:to-pink-200"
+              className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 hover:from-purple-200 hover:to-pink-200 dark:from-purple-500/20 dark:to-pink-500/20 dark:text-purple-200 dark:hover:from-purple-500/30 dark:hover:to-pink-500/30"
            >
              <NotebookPen size={18} className="mr-1.5" />
              <span className="hidden sm:inline">笔记整理</span>
@@ -1033,10 +1033,10 @@ const App: React.FC = () => {
              size="sm" 
              onClick={() => setShowExamToDoc(!showExamToDoc)} 
              title="试卷转文档"
-             className={showExamToDoc 
-               ? "bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-700" 
-               : "bg-gradient-to-r from-teal-50 to-cyan-50 text-teal-600 hover:from-teal-100 hover:to-cyan-100"
-             }
+              className={showExamToDoc 
+                ? "bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-700 dark:from-teal-500/20 dark:to-cyan-500/20 dark:text-teal-200" 
+                : "bg-gradient-to-r from-teal-50 to-cyan-50 text-teal-600 hover:from-teal-100 hover:to-cyan-100 dark:from-teal-500/10 dark:to-cyan-500/10 dark:text-teal-200 dark:hover:from-teal-500/20 dark:hover:to-cyan-500/20"
+              }
            >
              <ScanText size={18} className="mr-1.5" />
              <span className="hidden sm:inline">试卷转文档</span>
@@ -1048,10 +1048,10 @@ const App: React.FC = () => {
              size="sm" 
              onClick={() => { setShowFlashcards(!showFlashcards); setShowMindMap(false); setShowKnowledge(false); setShowFormula(false); }} 
              title="智能闪卡"
-             className={showFlashcards 
-               ? "bg-gradient-to-r from-violet-100 to-purple-100 text-violet-700" 
-               : "bg-gradient-to-r from-violet-50 to-purple-50 text-violet-600 hover:from-violet-100 hover:to-purple-100"
-             }
+              className={showFlashcards 
+                ? "bg-gradient-to-r from-violet-100 to-purple-100 text-violet-700 dark:from-violet-500/20 dark:to-purple-500/20 dark:text-violet-200" 
+                : "bg-gradient-to-r from-violet-50 to-purple-50 text-violet-600 hover:from-violet-100 hover:to-purple-100 dark:from-violet-500/10 dark:to-purple-500/10 dark:text-violet-200 dark:hover:from-violet-500/20 dark:hover:to-purple-500/20"
+              }
            >
              <Layers size={18} className="mr-1.5" />
              <span className="hidden sm:inline">闪卡</span>
@@ -1063,10 +1063,10 @@ const App: React.FC = () => {
              size="sm" 
              onClick={() => { setShowMindMap(!showMindMap); setShowFlashcards(false); setShowKnowledge(false); setShowFormula(false); }} 
              title="思维导图"
-             className={showMindMap 
-               ? "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700" 
-               : "bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-600 hover:from-emerald-100 hover:to-teal-100"
-             }
+              className={showMindMap 
+                ? "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 dark:from-emerald-500/20 dark:to-teal-500/20 dark:text-emerald-200" 
+                : "bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-600 hover:from-emerald-100 hover:to-teal-100 dark:from-emerald-500/10 dark:to-teal-500/10 dark:text-emerald-200 dark:hover:from-emerald-500/20 dark:hover:to-teal-500/20"
+              }
            >
              <GitBranch size={18} className="mr-1.5" />
              <span className="hidden sm:inline">导图</span>
@@ -1078,10 +1078,10 @@ const App: React.FC = () => {
              size="sm" 
              onClick={() => { setShowKnowledge(!showKnowledge); setShowFlashcards(false); setShowMindMap(false); setShowFormula(false); }} 
              title={`知识库 (${knowledgeStats.totalConcepts} 概念, ${knowledgeStats.totalFormulas} 公式) - AI 会调用已学知识优化回答`}
-             className={`relative ${showKnowledge 
-               ? "bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700" 
-               : "bg-gradient-to-r from-amber-50 to-orange-50 text-amber-600 hover:from-amber-100 hover:to-orange-100"
-             }`}
+              className={`relative ${showKnowledge 
+                ? "bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 dark:from-amber-500/20 dark:to-orange-500/20 dark:text-amber-200" 
+                : "bg-gradient-to-r from-amber-50 to-orange-50 text-amber-600 hover:from-amber-100 hover:to-orange-100 dark:from-amber-500/10 dark:to-orange-500/10 dark:text-amber-200 dark:hover:from-amber-500/20 dark:hover:to-orange-500/20"
+              }`}
            >
              <Database size={18} className="mr-1.5" />
              <span className="hidden sm:inline">知识库</span>
@@ -1098,16 +1098,16 @@ const App: React.FC = () => {
              size="sm" 
              onClick={() => { setShowFormula(!showFormula); setShowFlashcards(false); setShowMindMap(false); setShowKnowledge(false); }} 
              title="公式讲解"
-             className={showFormula 
-               ? "bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-700" 
-               : "bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-600 hover:from-indigo-100 hover:to-blue-100"
-             }
+              className={showFormula 
+                ? "bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-700 dark:from-indigo-500/20 dark:to-sky-500/20 dark:text-indigo-200" 
+                : "bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-600 hover:from-indigo-100 hover:to-blue-100 dark:from-indigo-500/10 dark:to-sky-500/10 dark:text-indigo-200 dark:hover:from-indigo-500/20 dark:hover:to-sky-500/20"
+              }
            >
              <Calculator size={18} className="mr-1.5" />
              <span className="hidden sm:inline">公式</span>
            </Button>
            
-           <div className="h-6 w-px bg-gray-200 mx-1"></div>
+          <div className="h-6 w-px bg-gray-200 dark:bg-white/10 mx-1"></div>
            
            {/* Files Manager Toggle */}
            <Button 
@@ -1115,7 +1115,7 @@ const App: React.FC = () => {
              size="sm" 
              onClick={() => setShowFiles(!showFiles)} 
              title={showFiles ? "Hide Files" : "Show Files"}
-             className={showFiles ? "bg-indigo-100 text-indigo-700" : ""}
+            className={showFiles ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200" : ""}
            >
              <FolderOpen size={18} />
            </Button>
@@ -1126,7 +1126,7 @@ const App: React.FC = () => {
              size="sm" 
              onClick={() => setShowNotes(!showNotes)} 
              title={showNotes ? "Hide Notes" : "Show Notes"}
-             className={showNotes ? "bg-amber-100 text-amber-700" : ""}
+            className={showNotes ? "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200" : ""}
            >
              {showNotes ? <PanelRightClose size={18} /> : <StickyNote size={18} />}
            </Button>
@@ -1139,10 +1139,10 @@ const App: React.FC = () => {
                onClick={saveCurrentSessionAsync} 
                disabled={isSaving}
                title={lastSaved ? `Last saved: ${lastSaved.toLocaleTimeString()}` : "Save Session"}
-               className={lastSaved ? "text-green-600" : ""}
+              className={lastSaved ? "text-green-600 dark:text-emerald-300" : ""}
              >
                {isSaving ? (
-                 <div className="animate-spin h-4 w-4 border-2 border-gray-400 border-t-indigo-600 rounded-full" />
+                <div className="animate-spin h-4 w-4 border-2 border-gray-400 border-t-indigo-600 dark:border-slate-500 dark:border-t-indigo-400 rounded-full" />
                ) : lastSaved ? (
                  <Cloud size={18} />
                ) : (
@@ -1151,14 +1151,14 @@ const App: React.FC = () => {
              </Button>
            )}
            
-           <div className="h-6 w-px bg-gray-200 mx-1"></div>
+          <div className="h-6 w-px bg-gray-200 dark:bg-white/10 mx-1"></div>
            
            <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)}>
              <Settings size={18} className="mr-2" />
              Config
            </Button>
            
-           <div className="h-6 w-px bg-gray-200 mx-1"></div>
+          <div className="h-6 w-px bg-gray-200 dark:bg-white/10 mx-1"></div>
 
            <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
              <Upload size={18} className="mr-2" />
@@ -1172,7 +1172,7 @@ const App: React.FC = () => {
                   <Download size={18} />
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setShowPdf(!showPdf)} className="hidden md:flex" title="Toggle PDF View">
-                  <FileText size={18} className={showPdf ? "text-indigo-600" : "text-gray-400"} />
+                  <FileText size={18} className={showPdf ? "text-indigo-600" : "text-gray-400 dark:text-slate-500"} />
                 </Button>
              </>
            )}
@@ -1238,7 +1238,7 @@ const App: React.FC = () => {
                 </button>
                 
                 {showStylePicker && (
-                  <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+                  <div className="absolute top-full right-0 mt-2 w-72 bg-white dark:bg-slate-900/85 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 dark:border-white/10 z-50 overflow-hidden">
                     <div className="p-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
                       <p className="text-sm font-medium">🎭 选择教学风格</p>
                       <p className="text-xs opacity-80">调整 AI 的讲解方式</p>
@@ -1248,30 +1248,30 @@ const App: React.FC = () => {
                         <button
                           key={style}
                           onClick={() => handleStyleChange(style)}
-                          className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors mb-1 ${
+                          className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors mb-1 ${
                             settings.teachingStyle === style
-                              ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
-                              : 'hover:bg-gray-100 text-gray-700'
+                              ? 'bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-200 dark:border-indigo-400/30'
+                              : 'hover:bg-gray-100 text-gray-700 dark:text-slate-200 dark:hover:bg-white/5'
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             <span className="text-lg">{TEACHING_STYLES[style].icon}</span>
                             <div>
                               <span className="font-medium">{TEACHING_STYLES[style].name}</span>
-                              <p className="text-xs text-gray-500">{TEACHING_STYLES[style].description}</p>
+                              <p className="text-xs text-gray-500 dark:text-slate-400">{TEACHING_STYLES[style].description}</p>
                             </div>
                           </div>
                         </button>
                       ))}
                     </div>
-                    <div className="p-2 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-                      <p className="text-[10px] text-gray-500 flex items-center gap-1">
+                    <div className="p-2 bg-gray-50 dark:bg-white/5 border-t border-gray-100 dark:border-white/10 flex items-center justify-between">
+                      <p className="text-[10px] text-gray-500 dark:text-slate-400 flex items-center gap-1">
                         <MessageCircle size={10} />
                         {settings.enableContext ? `多轮上下文: ${settings.contextTurns}轮` : '上下文已关闭'}
                       </p>
                       <button 
                         onClick={() => setShowStylePicker(false)}
-                        className="text-xs text-gray-400 hover:text-gray-600"
+                        className="text-xs text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200"
                       >
                         关闭
                       </button>
@@ -1448,11 +1448,11 @@ const App: React.FC = () => {
               
               <div className="flex-1 relative overflow-auto flex flex-col items-center justify-start py-4 px-4">
                 {/* 显示保存的页面预览图片 */}
-                {lectureState.parsedPages[viewPage - 1]?.image ? (
+                 {lectureState.parsedPages[viewPage - 1]?.image ? (
                   <img 
                     src={lectureState.parsedPages[viewPage - 1].image} 
                     alt={`Page ${viewPage}`}
-                    className="max-w-full shadow-xl bg-white"
+                     className="max-w-full shadow-xl bg-white dark:bg-slate-900 dark:border dark:border-white/10 rounded-xl"
                   />
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
@@ -1511,7 +1511,7 @@ const App: React.FC = () => {
         )}
 
         {/* Lecture Panel */}
-        <div className="flex-1 flex flex-col h-full relative bg-slate-50 min-w-0">
+        <div className="flex-1 flex flex-col h-full relative bg-slate-50 dark:bg-slate-950/40 min-w-0">
           {/* Chat/Content */}
           <LecturePanel 
             messages={messages} 
@@ -1521,17 +1521,17 @@ const App: React.FC = () => {
           />
 
           {/* Input */}
-          <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0">
+          <div className="p-5 bg-white/90 dark:bg-slate-900/60 backdrop-blur-xl border-t border-gray-200 dark:border-white/10 flex-shrink-0">
              <div className="max-w-4xl mx-auto">
                 {/* Image Preview Area */}
-                {chatImages.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                 {chatImages.length > 0 && (
+                   <div className="flex flex-wrap gap-2 mb-3 p-3 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/10">
                     {chatImages.map((img, index) => (
                       <div key={index} className="relative group">
                         <img 
                           src={img} 
                           alt={`Upload ${index + 1}`}
-                          className="h-16 w-16 object-cover rounded-lg border border-gray-300 shadow-sm"
+                           className="h-16 w-16 object-cover rounded-xl border border-gray-300 dark:border-white/15 shadow-sm"
                         />
                         <button
                           onClick={() => removeImage(index)}
@@ -1584,7 +1584,7 @@ const App: React.FC = () => {
                 )}
 
                 {/* Input Row */}
-                <div className="relative flex items-center gap-2">
+                 <div className="relative flex items-center gap-2">
                   {/* Image Upload Button */}
                   <input
                     ref={imageInputRef}
@@ -1594,10 +1594,10 @@ const App: React.FC = () => {
                     onChange={handleImageUpload}
                     className="hidden"
                   />
-                  <button
+                   <button
                     onClick={() => imageInputRef.current?.click()}
                     disabled={!lectureState.file || isGenerating}
-                    className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                     className="p-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-600 dark:text-slate-200 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                     title="Upload image"
                   >
                     <ImagePlus size={20} />
@@ -1605,9 +1605,9 @@ const App: React.FC = () => {
 
                   {/* Text Input */}
                   <div className="relative flex-1">
-                    <input
+                     <input
                       type="text"
-                      className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all shadow-sm text-gray-800 placeholder-gray-400"
+                       className="w-full pl-4 pr-12 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl focus:bg-white dark:focus:bg-white/10 focus:ring-2 focus:ring-indigo-500/60 dark:focus:ring-indigo-400/30 focus:border-transparent outline-none transition-all shadow-sm text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500"
                       placeholder={
                         lectureState.file 
                           ? chatImages.length > 0 
