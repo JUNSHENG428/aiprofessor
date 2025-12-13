@@ -18,7 +18,7 @@ import { FormulaExplainerPanel } from './components/FormulaExplainerPanel';
 import { ToastContainer } from './components/Toast';
 import { parsePDF } from './services/pdfService';
 import { generateStream, stopGeneration } from './services/aiService';
-import { ocrRegionStructured } from './services/ocrService';
+import { useOcrFlow } from './hooks/useOcrFlow';
 import { 
   saveSession, 
   saveFileRecord, 
@@ -27,9 +27,7 @@ import {
   clearAutoSave,
   getStorageStats,
   getAugmentedContext,
-  getKnowledgeStats,
-  saveFormulas,
-  saveKnowledgeConcept
+  getKnowledgeStats
 } from './services/storageService';
 import { ParsedPage, LectureState, Message, LectureMode, AppSettings, DEFAULT_SETTINGS, FileRecord, Session, Note, TeachingStyle } from './types';
 import { PROMPTS, TEACHING_STYLES } from './constants';
@@ -91,10 +89,6 @@ const App: React.FC = () => {
     pageNumber: number;
     imageDataUrl: string;
   } | null>(null);
-  const [isOcrRunning, setIsOcrRunning] = useState(false);
-  const [ocrProgressText, setOcrProgressText] = useState('');
-  
-  // AI enhancement state
   const [showStylePicker, setShowStylePicker] = useState(false);
   const [lastPromptData, setLastPromptData] = useState<{
     type: 'lecture' | 'chat';
@@ -751,90 +745,24 @@ const App: React.FC = () => {
     });
   }, []);
 
+  // --- Hooks ---
+  const { isOcrRunning, ocrProgressText, performOcr, resetOcrState } = useOcrFlow({
+    settings,
+    currentFileId,
+    currentFileName: lectureState.file?.name,
+    onInputUpdate: setUserInput
+  });
+
   // 一键 OCR：框选后点击，把结构化结果插入聊天，并自动写入公式库/知识库
   const handleOneClickOcr = useCallback(async () => {
     if (!lastPdfRegion) return;
     if (isOcrRunning || isGenerating) return;
-    if (!settings.apiKey && settings.provider !== 'ollama') {
+    
+    const result = await performOcr(lastPdfRegion);
+    if (!result.success && result.error === 'missing_api_key') {
       setShowSettings(true);
-      return;
     }
-
-    try {
-      setIsOcrRunning(true);
-      setOcrProgressText('');
-
-      const { parsed, raw } = await ocrRegionStructured(
-        settings,
-        lastPdfRegion.imageDataUrl,
-        'auto',
-        (progress) => setOcrProgressText(progress)
-      );
-
-      const now = Date.now();
-      const jsonText = parsed ? JSON.stringify(parsed, null, 2) : raw;
-      const block =
-        `【OCR 结构化结果｜第 ${lastPdfRegion.pageNumber} 页框选区域】\n\n` +
-        `\`\`\`json\n${jsonText}\n\`\`\`\n`;
-
-      // 1) 插入聊天输入框（不自动发送）
-      setUserInput(prev => (prev.trim() ? `${prev}\n\n${block}` : block));
-
-      // 2) 自动存入公式库
-      if (parsed?.formulas?.length) {
-        const newFormulas = parsed.formulas
-          .filter(f => f?.latex && String(f.latex).trim())
-          .slice(0, 20)
-          .map((f, idx) => ({
-            id: `${now}-ocr-formula-${idx}`,
-            latex: String(f.latex).trim(),
-            name: f.name ? String(f.name).trim() : undefined,
-            tags: ['ocr', 'region'],
-            fileId: currentFileId || undefined,
-            fileName: lectureState.file?.name,
-            pageNumber: lastPdfRegion.pageNumber,
-            category: 'other' as const,
-            difficulty: 'intermediate' as const,
-            createdAt: now,
-            updatedAt: now,
-          }));
-
-        if (newFormulas.length) saveFormulas(newFormulas as any);
-      }
-
-      // 3) 自动存入知识库（区域知识点）
-      if (parsed) {
-        const firstLine =
-          (parsed.text || '')
-            .split('\n')
-            .map(s => s.trim())
-            .filter(Boolean)[0] || '框选区域内容（OCR 提取）';
-
-        const examples: string[] = [];
-        parsed.tables?.forEach(t => t?.markdown && examples.push(`表格：\n${t.markdown}`));
-        parsed.charts?.forEach(c => c?.description && examples.push(`图表：${c.description}`));
-
-        saveKnowledgeConcept({
-          id: `${now}-ocr-concept-${lastPdfRegion.pageNumber}`,
-          title: `区域OCR：第${lastPdfRegion.pageNumber}页`,
-          definition: firstLine,
-          details: parsed.text || undefined,
-          examples: examples.length ? examples.slice(0, 8) : undefined,
-          tags: ['ocr', 'region'],
-          fileId: currentFileId || undefined,
-          fileName: lectureState.file?.name,
-          pageNumber: lastPdfRegion.pageNumber,
-          importance: 'medium',
-          createdAt: now,
-          updatedAt: now,
-        });
-      }
-    } catch (e) {
-      console.error('One-click OCR failed:', e);
-    } finally {
-      setIsOcrRunning(false);
-    }
-  }, [lastPdfRegion, isOcrRunning, isGenerating, settings, currentFileId, lectureState.file?.name]);
+  }, [lastPdfRegion, isOcrRunning, isGenerating, performOcr]);
   
   // Regenerate the last response
   const handleRegenerate = async () => {
@@ -1633,7 +1561,7 @@ const App: React.FC = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => { setLastPdfRegion(null); setOcrProgressText(''); }}
+                        onClick={() => { setLastPdfRegion(null); resetOcrState(); }}
                         disabled={isOcrRunning}
                       >
                         清除

@@ -262,6 +262,34 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ file, pageNumber, totalPag
     renderAnnotations();
   }, [renderAnnotations]);
 
+  // Toggle pan mode
+  const togglePanMode = useCallback(() => {
+    setIsPanMode(prev => !prev);
+    if (annotationMode !== 'none') {
+      setAnnotationMode('none');
+    }
+  }, [annotationMode]);
+
+  // Zoom handlers
+  const handleZoomIn = useCallback(() => {
+    setZoomPercent(prev => Math.min(MAX_ZOOM, prev + ZOOM_STEP));
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoomPercent(prev => Math.max(MIN_ZOOM, prev - ZOOM_STEP));
+  }, []);
+
+  const handleFitWidth = useCallback(() => {
+    setZoomPercent(DEFAULT_ZOOM);
+  }, []);
+
+  const handleReset = useCallback(() => {
+    setZoomPercent(DEFAULT_ZOOM);
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    }
+  }, []);
+
   // Keyboard shortcut for pan mode (Space key)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -285,6 +313,23 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ file, pageNumber, totalPag
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
+  }, []);
+
+  // Wheel zoom handler
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+      setZoomPercent(prev => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prev + delta)));
+    }
+  }, []);
+
+  // Double click to reset zoom
+  const handleDoubleClick = useCallback(() => {
+    setZoomPercent(DEFAULT_ZOOM);
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    }
   }, []);
 
   // Search in entire PDF
@@ -449,17 +494,17 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ file, pageNumber, totalPag
           console.error('Region crop failed', err);
         }
       } else {
-      const newAnnotation: Annotation = {
-        id: Date.now().toString(),
-        pageNumber,
-        type: annotationMode as 'highlight' | 'underline',
-        color: selectedColor,
-        x,
-        y,
-        width,
-        height
-      };
-      saveAnnotations([...annotations, newAnnotation]);
+        const newAnnotation: Annotation = {
+          id: Date.now().toString(),
+          pageNumber,
+          type: annotationMode as 'highlight' | 'underline',
+          color: selectedColor,
+          x,
+          y,
+          width,
+          height
+        };
+        saveAnnotations([...annotations, newAnnotation]);
       }
     }
     
@@ -509,51 +554,6 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ file, pageNumber, totalPag
 
   const handleContainerMouseUp = useCallback(() => {
     setIsPanning(false);
-  }, []);
-
-  // Wheel zoom handler
-  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
-      setZoomPercent(prev => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prev + delta)));
-    }
-  }, []);
-
-  // Double click to reset zoom
-  const handleDoubleClick = useCallback(() => {
-    setZoomPercent(DEFAULT_ZOOM);
-    if (containerRef.current) {
-      containerRef.current.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-    }
-  }, []);
-
-  // Toggle pan mode
-  const togglePanMode = useCallback(() => {
-    setIsPanMode(prev => !prev);
-    if (annotationMode !== 'none') {
-      setAnnotationMode('none');
-    }
-  }, [annotationMode]);
-
-  // Zoom handlers
-  const handleZoomIn = useCallback(() => {
-    setZoomPercent(prev => Math.min(MAX_ZOOM, prev + ZOOM_STEP));
-  }, []);
-
-  const handleZoomOut = useCallback(() => {
-    setZoomPercent(prev => Math.max(MIN_ZOOM, prev - ZOOM_STEP));
-  }, []);
-
-  const handleFitWidth = useCallback(() => {
-    setZoomPercent(DEFAULT_ZOOM);
-  }, []);
-
-  const handleReset = useCallback(() => {
-    setZoomPercent(DEFAULT_ZOOM);
-    if (containerRef.current) {
-      containerRef.current.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-    }
   }, []);
 
   // Check if current page has search matches
