@@ -31,7 +31,7 @@ import {
 } from './services/storageService';
 import { ParsedPage, LectureState, Message, LectureMode, AppSettings, DEFAULT_SETTINGS, FileRecord, Session, Note, TeachingStyle } from './types';
 import { PROMPTS, TEACHING_STYLES } from './constants';
-import { BookOpen, Settings, Upload, FileText, ChevronLeft, ChevronRight, Download, Send, GraduationCap, ClipboardCheck, X, GripVertical, FolderOpen, StickyNote, Save, PanelRightOpen, PanelRightClose, Square, ImagePlus, Clipboard, Trash2, Cloud, CloudOff, RefreshCw, Sparkles, MessageCircle, NotebookPen, ScanText, Layers, GitBranch, Database, Calculator } from 'lucide-react';
+import { BookOpen, Settings, Upload, FileText, ChevronLeft, ChevronRight, Download, Send, GraduationCap, ClipboardCheck, X, GripVertical, FolderOpen, StickyNote, Save, PanelRightOpen, PanelRightClose, Square, ImagePlus, Clipboard, Trash2, Cloud, CloudOff, RefreshCw, Sparkles, MessageCircle, NotebookPen, ScanText, Layers, GitBranch, Database, Calculator, MoreHorizontal } from 'lucide-react';
 
 // Page types
 type PageType = 'lecture' | 'notes-organizer';
@@ -90,6 +90,7 @@ const App: React.FC = () => {
     imageDataUrl: string;
   } | null>(null);
   const [showStylePicker, setShowStylePicker] = useState(false);
+  const [showHeaderMoreMenu, setShowHeaderMoreMenu] = useState(false);
   const [lastPromptData, setLastPromptData] = useState<{
     type: 'lecture' | 'chat';
     prompt: string;
@@ -109,6 +110,8 @@ const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const headerMoreMenuRef = useRef<HTMLDivElement>(null);
+  const headerMoreButtonRef = useRef<HTMLButtonElement>(null);
 
   // Implementation of independent PDF navigation
   const [viewPage, setViewPage] = useState<number>(1);
@@ -174,6 +177,30 @@ const App: React.FC = () => {
       setShowSettings(true);
     }
   }, [settings]);
+
+  // Close header popover on outside click / ESC
+  useEffect(() => {
+    if (!showHeaderMoreMenu) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowHeaderMoreMenu(false);
+    };
+
+    const onMouseDown = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (headerMoreMenuRef.current?.contains(target)) return;
+      if (headerMoreButtonRef.current?.contains(target)) return;
+      setShowHeaderMoreMenu(false);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('mousedown', onMouseDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('mousedown', onMouseDown);
+    };
+  }, [showHeaderMoreMenu]);
 
   // Deep Pro theme: force Tailwind dark mode (class-based)
   useEffect(() => {
@@ -998,9 +1025,10 @@ const App: React.FC = () => {
     active?: boolean;
     onClick?: () => void;
     badgeText?: string;
+    forceLabel?: boolean;
     className?: string;
   }) => {
-    const { icon, label, title, active, onClick, badgeText, className } = props;
+    const { icon, label, title, active, onClick, badgeText, forceLabel, className } = props;
     return (
       <button
         type="button"
@@ -1030,7 +1058,7 @@ const App: React.FC = () => {
         <span className={active ? 'text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300'}>
           {icon}
         </span>
-        <span className="hidden sm:inline">{label}</span>
+        <span className={forceLabel ? 'inline' : 'hidden sm:inline'}>{label}</span>
         {badgeText && (
           <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] leading-none bg-indigo-600/10 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-200 border border-indigo-500/10 dark:border-indigo-400/20">
             {badgeText}
@@ -1063,117 +1091,246 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          <ProPillButton
-            icon={<NotebookPen size={16} />}
-            label="笔记"
-            title="整理笔记助手"
-            onClick={() => setCurrentPage('notes-organizer')}
-          />
-
-          <ProPillButton
-            icon={<ScanText size={16} />}
-            label="OCR"
-            title="试卷转文档"
-            onClick={() => setShowExamToDoc(!showExamToDoc)}
-            active={showExamToDoc}
-          />
-
-          <ProPillButton
-            icon={<Layers size={16} />}
-            label="闪卡"
-            title="智能闪卡"
-            onClick={() => { setShowFlashcards(!showFlashcards); setShowMindMap(false); setShowKnowledge(false); setShowFormula(false); }}
-            active={showFlashcards}
-          />
-
-          <ProPillButton
-            icon={<GitBranch size={16} />}
-            label="导图"
-            title="思维导图"
-            onClick={() => { setShowMindMap(!showMindMap); setShowFlashcards(false); setShowKnowledge(false); setShowFormula(false); }}
-            active={showMindMap}
-          />
-
-          <ProPillButton
-            icon={<Database size={16} />}
-            label="知识"
-            title={`知识库 (${knowledgeStats.totalConcepts} 概念, ${knowledgeStats.totalFormulas} 公式) - AI 会调用已学知识优化回答`}
-            badgeText={(knowledgeStats.totalConcepts + knowledgeStats.totalFormulas) > 0 ? `${knowledgeStats.totalConcepts + knowledgeStats.totalFormulas}` : undefined}
-            onClick={() => { setShowKnowledge(!showKnowledge); setShowFlashcards(false); setShowMindMap(false); setShowFormula(false); }}
-            active={showKnowledge}
-          />
-
-          <ProPillButton
-            icon={<Calculator size={16} />}
-            label="公式"
-            title="公式讲解"
-            onClick={() => { setShowFormula(!showFormula); setShowFlashcards(false); setShowMindMap(false); setShowKnowledge(false); }}
-            active={showFormula}
-          />
-
-          <div className="h-6 w-px bg-gray-200/70 dark:bg-white/10 mx-1 hidden sm:block" />
-
-          <ProPillButton
-            icon={<FolderOpen size={16} />}
-            label="文件"
-            title={showFiles ? "Hide Files" : "Show Files"}
-            onClick={() => setShowFiles(!showFiles)}
-            active={showFiles}
-          />
-
-          <ProPillButton
-            icon={showNotes ? <PanelRightClose size={16} /> : <StickyNote size={16} />}
-            label="笔记条"
-            title={showNotes ? "Hide Notes" : "Show Notes"}
-            onClick={() => setShowNotes(!showNotes)}
-            active={showNotes}
-          />
-
-          {messages.length > 0 && (
+        <div className="relative flex items-center justify-end">
+          {/* Desktop / Wide: keep inline (no wrap, header height stable) */}
+          <div className="hidden lg:flex items-center gap-2 flex-nowrap">
             <ProPillButton
-              icon={isSaving ? <RefreshCw size={16} className="animate-spin" /> : (lastSaved ? <Cloud size={16} /> : <Save size={16} />)}
-              label="保存"
-              title={lastSaved ? `Last saved: ${lastSaved.toLocaleTimeString()}` : "Save Session"}
-              onClick={saveCurrentSessionAsync}
-              active={!!lastSaved}
+              icon={<NotebookPen size={16} />}
+              label="笔记"
+              title="整理笔记助手"
+              onClick={() => setCurrentPage('notes-organizer')}
             />
-          )}
 
-          <ProPillButton
-            icon={<Settings size={16} />}
-            label="设置"
-            title="Settings"
-            onClick={() => setShowSettings(true)}
-          />
+            <ProPillButton
+              icon={<ScanText size={16} />}
+              label="OCR"
+              title="试卷转文档"
+              onClick={() => setShowExamToDoc(!showExamToDoc)}
+              active={showExamToDoc}
+            />
 
-          <ProPillButton
-            icon={<Upload size={16} />}
-            label={lectureState.file ? '换PDF' : (lectureState.parsedPages.length > 0 ? '重传' : '上传')}
-            title="Upload PDF"
-            onClick={() => fileInputRef.current?.click()}
-          />
-          <input type="file" ref={fileInputRef} className="hidden" accept=".pdf" onChange={handleFileChange} />
+            <ProPillButton
+              icon={<Layers size={16} />}
+              label="闪卡"
+              title="智能闪卡"
+              onClick={() => { setShowFlashcards(!showFlashcards); setShowMindMap(false); setShowKnowledge(false); setShowFormula(false); }}
+              active={showFlashcards}
+            />
 
-          {(lectureState.file || lectureState.parsedPages.length > 0) && (
-            <>
+            <ProPillButton
+              icon={<GitBranch size={16} />}
+              label="导图"
+              title="思维导图"
+              onClick={() => { setShowMindMap(!showMindMap); setShowFlashcards(false); setShowKnowledge(false); setShowFormula(false); }}
+              active={showMindMap}
+            />
+
+            <ProPillButton
+              icon={<Database size={16} />}
+              label="知识"
+              title={`知识库 (${knowledgeStats.totalConcepts} 概念, ${knowledgeStats.totalFormulas} 公式) - AI 会调用已学知识优化回答`}
+              badgeText={(knowledgeStats.totalConcepts + knowledgeStats.totalFormulas) > 0 ? `${knowledgeStats.totalConcepts + knowledgeStats.totalFormulas}` : undefined}
+              onClick={() => { setShowKnowledge(!showKnowledge); setShowFlashcards(false); setShowMindMap(false); setShowFormula(false); }}
+              active={showKnowledge}
+            />
+
+            <ProPillButton
+              icon={<Calculator size={16} />}
+              label="公式"
+              title="公式讲解"
+              onClick={() => { setShowFormula(!showFormula); setShowFlashcards(false); setShowMindMap(false); setShowKnowledge(false); }}
+              active={showFormula}
+            />
+
+            <div className="h-6 w-px bg-gray-200/70 dark:bg-white/10 mx-1 hidden xl:block" />
+
+            <ProPillButton
+              icon={<FolderOpen size={16} />}
+              label="文件"
+              title={showFiles ? "Hide Files" : "Show Files"}
+              onClick={() => setShowFiles(!showFiles)}
+              active={showFiles}
+            />
+
+            <ProPillButton
+              icon={showNotes ? <PanelRightClose size={16} /> : <StickyNote size={16} />}
+              label="笔记条"
+              title={showNotes ? "Hide Notes" : "Show Notes"}
+              onClick={() => setShowNotes(!showNotes)}
+              active={showNotes}
+            />
+
+            {messages.length > 0 && (
               <ProPillButton
-                icon={<Download size={16} />}
-                label="导出"
-                title="Export Notes"
-                onClick={handleExport}
+                icon={isSaving ? <RefreshCw size={16} className="animate-spin" /> : (lastSaved ? <Cloud size={16} /> : <Save size={16} />)}
+                label="保存"
+                title={lastSaved ? `Last saved: ${lastSaved.toLocaleTimeString()}` : "Save Session"}
+                onClick={saveCurrentSessionAsync}
+                active={!!lastSaved}
               />
-              <div className="hidden md:block">
+            )}
+
+            <ProPillButton
+              icon={<Settings size={16} />}
+              label="设置"
+              title="Settings"
+              onClick={() => setShowSettings(true)}
+            />
+
+            <ProPillButton
+              icon={<Upload size={16} />}
+              label={lectureState.file ? '换PDF' : (lectureState.parsedPages.length > 0 ? '重传' : '上传')}
+              title="Upload PDF"
+              onClick={() => fileInputRef.current?.click()}
+            />
+            <input type="file" ref={fileInputRef} className="hidden" accept=".pdf" onChange={handleFileChange} />
+
+            {(lectureState.file || lectureState.parsedPages.length > 0) && (
+              <>
                 <ProPillButton
-                  icon={<FileText size={16} />}
-                  label={showPdf ? "PDF开" : "PDF关"}
-                  title="Toggle PDF View"
-                  onClick={() => setShowPdf(!showPdf)}
-                  active={showPdf}
+                  icon={<Download size={16} />}
+                  label="导出"
+                  title="Export Notes"
+                  onClick={handleExport}
                 />
+                <div className="hidden xl:block">
+                  <ProPillButton
+                    icon={<FileText size={16} />}
+                    label={showPdf ? "PDF开" : "PDF关"}
+                    title="Toggle PDF View"
+                    onClick={() => setShowPdf(!showPdf)}
+                    active={showPdf}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Mobile / Narrow: collapse into … popover */}
+          <div className="flex lg:hidden items-center gap-2">
+            <button
+              ref={headerMoreButtonRef}
+              type="button"
+              onClick={() => setShowHeaderMoreMenu(v => !v)}
+              className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium tracking-tight bg-white/40 dark:bg-white/5 backdrop-blur-md border border-gray-200/70 dark:border-white/10 transition-all duration-200 hover:bg-white/60 dark:hover:bg-white/8 hover:border-gray-300/70 dark:hover:border-white/15 hover:shadow-[0_10px_30px_rgba(99,102,241,0.18)] text-gray-700 dark:text-slate-200/90"
+              title="更多"
+            >
+              <MoreHorizontal size={16} className="text-gray-600 dark:text-slate-300" />
+              <span>更多</span>
+            </button>
+
+            {showHeaderMoreMenu && (
+              <div
+                ref={headerMoreMenuRef}
+                className="absolute right-0 top-full mt-2 w-[min(92vw,520px)] bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border border-gray-200/70 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+              >
+                <div className="p-3 grid grid-cols-2 gap-2">
+                  <ProPillButton
+                    icon={<NotebookPen size={16} />}
+                    label="笔记整理"
+                    forceLabel
+                    onClick={() => { setShowHeaderMoreMenu(false); setCurrentPage('notes-organizer'); }}
+                  />
+                  <ProPillButton
+                    icon={<ScanText size={16} />}
+                    label="试卷转文档"
+                    forceLabel
+                    active={showExamToDoc}
+                    onClick={() => { setShowHeaderMoreMenu(false); setShowExamToDoc(!showExamToDoc); }}
+                  />
+                  <ProPillButton
+                    icon={<Layers size={16} />}
+                    label="智能闪卡"
+                    forceLabel
+                    active={showFlashcards}
+                    onClick={() => { setShowHeaderMoreMenu(false); setShowFlashcards(!showFlashcards); setShowMindMap(false); setShowKnowledge(false); setShowFormula(false); }}
+                  />
+                  <ProPillButton
+                    icon={<GitBranch size={16} />}
+                    label="思维导图"
+                    forceLabel
+                    active={showMindMap}
+                    onClick={() => { setShowHeaderMoreMenu(false); setShowMindMap(!showMindMap); setShowFlashcards(false); setShowKnowledge(false); setShowFormula(false); }}
+                  />
+                  <ProPillButton
+                    icon={<Database size={16} />}
+                    label="知识库"
+                    forceLabel
+                    badgeText={(knowledgeStats.totalConcepts + knowledgeStats.totalFormulas) > 0 ? `${knowledgeStats.totalConcepts + knowledgeStats.totalFormulas}` : undefined}
+                    active={showKnowledge}
+                    onClick={() => { setShowHeaderMoreMenu(false); setShowKnowledge(!showKnowledge); setShowFlashcards(false); setShowMindMap(false); setShowFormula(false); }}
+                  />
+                  <ProPillButton
+                    icon={<Calculator size={16} />}
+                    label="公式讲解"
+                    forceLabel
+                    active={showFormula}
+                    onClick={() => { setShowHeaderMoreMenu(false); setShowFormula(!showFormula); setShowFlashcards(false); setShowMindMap(false); setShowKnowledge(false); }}
+                  />
+
+                  <div className="col-span-2 h-px bg-gray-200/70 dark:bg-white/10 my-1" />
+
+                  <ProPillButton
+                    icon={<FolderOpen size={16} />}
+                    label="文件列表"
+                    forceLabel
+                    active={showFiles}
+                    onClick={() => { setShowHeaderMoreMenu(false); setShowFiles(!showFiles); }}
+                  />
+                  <ProPillButton
+                    icon={showNotes ? <PanelRightClose size={16} /> : <StickyNote size={16} />}
+                    label="笔记侧栏"
+                    forceLabel
+                    active={showNotes}
+                    onClick={() => { setShowHeaderMoreMenu(false); setShowNotes(!showNotes); }}
+                  />
+
+                  {messages.length > 0 && (
+                    <ProPillButton
+                      icon={isSaving ? <RefreshCw size={16} className="animate-spin" /> : (lastSaved ? <Cloud size={16} /> : <Save size={16} />)}
+                      label="保存会话"
+                      forceLabel
+                      active={!!lastSaved}
+                      onClick={() => { setShowHeaderMoreMenu(false); saveCurrentSessionAsync(); }}
+                    />
+                  )}
+
+                  <ProPillButton
+                    icon={<Settings size={16} />}
+                    label="设置"
+                    forceLabel
+                    onClick={() => { setShowHeaderMoreMenu(false); setShowSettings(true); }}
+                  />
+
+                  <ProPillButton
+                    icon={<Upload size={16} />}
+                    label={lectureState.file ? '更换PDF' : (lectureState.parsedPages.length > 0 ? '重新上传PDF' : '上传PDF')}
+                    forceLabel
+                    onClick={() => { setShowHeaderMoreMenu(false); fileInputRef.current?.click(); }}
+                  />
+
+                  {(lectureState.file || lectureState.parsedPages.length > 0) && (
+                    <ProPillButton
+                      icon={<Download size={16} />}
+                      label="导出笔记"
+                      forceLabel
+                      onClick={() => { setShowHeaderMoreMenu(false); handleExport(); }}
+                    />
+                  )}
+
+                  {(lectureState.file || lectureState.parsedPages.length > 0) && (
+                    <ProPillButton
+                      icon={<FileText size={16} />}
+                      label={showPdf ? "关闭PDF" : "打开PDF"}
+                      forceLabel
+                      active={showPdf}
+                      onClick={() => { setShowHeaderMoreMenu(false); setShowPdf(!showPdf); }}
+                    />
+                  )}
+                </div>
               </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </header>
 
