@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import { MarkdownView } from './MarkdownView';
 import { 
   Layers, Plus, Brain, RotateCcw, Check, X, ChevronLeft, ChevronRight,
   Sparkles, Trash2, Edit3, Clock, Target, Zap, BookOpen, Filter
@@ -18,23 +15,9 @@ import { Button } from './Button';
 import { useToast } from './Toast';
 import { useDebounce, useHotkey, useClipboard } from '../hooks/useOptimized';
 
-// KaTeX 配置
-const katexOptions = {
-  strict: false,
-  throwOnError: false,
-  output: 'htmlAndMathml' as const,
-  trust: true
-};
-
-// 简单的公式渲染组件
+// 闪卡中的“短文本 + 公式”渲染：使用 inline 模式避免额外换行影响布局
 const FormulaText: React.FC<{ text: string; className?: string }> = ({ text, className }) => (
-  <ReactMarkdown 
-    remarkPlugins={[remarkGfm, remarkMath]}
-    rehypePlugins={[[rehypeKatex, katexOptions] as any]}
-    className={className}
-  >
-    {text}
-  </ReactMarkdown>
+  <MarkdownView content={text} className={className} inline />
 );
 
 interface FlashcardsPanelProps {

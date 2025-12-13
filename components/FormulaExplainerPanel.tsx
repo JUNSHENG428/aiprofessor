@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import katex from 'katex';
 import { 
   Calculator, Plus, Sparkles, X, Search, Trash2, Edit3, Copy,
   ChevronDown, ChevronRight, ChevronLeft, BookOpen, Zap, Filter, Download,
@@ -18,6 +16,7 @@ import { PROMPTS } from '../constants';
 import { Button } from './Button';
 import { useToast } from './Toast';
 import { useDebounce, useClipboard } from '../hooks/useOptimized';
+import { MarkdownView } from './MarkdownView';
 
 interface FormulaExplainerPanelProps {
   isOpen: boolean;
@@ -54,16 +53,18 @@ const LatexRenderer: React.FC<{ latex: string; display?: boolean }> = ({ latex, 
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (containerRef.current && (window as any).katex) {
-      try {
-        (window as any).katex.render(latex, containerRef.current, {
-          displayMode: display,
-          throwOnError: false,
-          errorColor: '#cc0000'
-        });
-      } catch (e) {
-        containerRef.current.textContent = latex;
-      }
+    if (!containerRef.current) return;
+    try {
+      katex.render(latex || '', containerRef.current, {
+        displayMode: display,
+        throwOnError: false,
+        errorColor: '#cc0000',
+        strict: false,
+        trust: true,
+        output: 'htmlAndMathml',
+      } as any);
+    } catch (e) {
+      containerRef.current.textContent = latex;
     }
   }, [latex, display]);
 
@@ -118,17 +119,6 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
   useEffect(() => {
     if (isOpen) {
       setFormulas(getFormulas());
-      // 动态加载 KaTeX
-      if (!(window as any).katex) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
-        document.head.appendChild(link);
-        
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js';
-        document.head.appendChild(script);
-      }
     }
   }, [isOpen]);
 
@@ -832,12 +822,7 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
                 </div>
               ) : null}
               <div className="markdown-body">
-                <ReactMarkdown 
-                  remarkPlugins={[remarkGfm, remarkMath]}
-                  rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }] as any]}
-                >
-                  {explanation || '正在分析公式...'}
-                </ReactMarkdown>
+                <MarkdownView content={explanation || '正在分析公式...'} />
               </div>
             </div>
 
@@ -905,12 +890,7 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
             {/* 已保存的讲解 */}
             {selectedFormula.explanation ? (
               <div className="prose prose-sm max-w-none markdown-body">
-                <ReactMarkdown 
-                  remarkPlugins={[remarkGfm, remarkMath]}
-                  rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }] as any]}
-                >
-                  {selectedFormula.explanation}
-                </ReactMarkdown>
+                <MarkdownView content={selectedFormula.explanation} />
               </div>
             ) : (
               <div className="text-center py-8 text-gray-400">

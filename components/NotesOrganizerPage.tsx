@@ -1,8 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
-import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
 import { parsePDF } from '../services/pdfService';
 import { generateStream, stopGeneration } from '../services/aiService';
 import { AppSettings, ParsedPage } from '../types';
@@ -13,6 +10,7 @@ import {
   FileDown, Eye, Network, List, Type, Image, Loader2
 } from 'lucide-react';
 import { Button } from './Button';
+import { MarkdownView } from './MarkdownView';
 
 // Mindmap data structure
 interface MindmapNode {
@@ -1435,9 +1433,8 @@ ${organizedNotes.slice(-3000)}
                         }} 
                       />
                     ) : (
-                      <ReactMarkdown 
-                        remarkPlugins={[remarkGfm, remarkMath]}
-                        rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }] as any]}
+                      <MarkdownView
+                        content={organizedNotes}
                         components={{
                           // 主题标题 - 大卡片样式
                           h2: ({children}) => (
@@ -1504,9 +1501,7 @@ ${organizedNotes.slice(-3000)}
                             <hr className="my-8 border-0 h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent" />
                           ),
                         }}
-                      >
-                        {organizedNotes}
-                      </ReactMarkdown>
+                      />
                     )}
                   </div>
                 ) : viewMode === 'outline' ? (

@@ -1,35 +1,6 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import React, { useState, useRef, useEffect } from 'react';
 import { ClipboardCheck, ChevronRight, ChevronLeft, Send, RefreshCw, X, Loader2, GripVertical, CheckCircle, AlertCircle } from 'lucide-react';
-
-// KaTeX 配置
-const katexOptions = {
-  strict: false,
-  throwOnError: false,
-  output: 'htmlAndMathml' as const,
-  trust: true
-};
-
-/**
- * 预处理 Markdown 内容，确保 LaTeX 公式格式正确
- */
-const preprocessContent = (content: string): string => {
-  let processed = content;
-  processed = processed.replace(/\$([^$]+)\$/g, (match, formula) => {
-    const fixed = formula.replace(/\\\\/g, '\\');
-    return `$${fixed}$`;
-  });
-  processed = processed.replace(/\$\$([^$]+)\$\$/g, (match, formula) => {
-    const fixed = formula.replace(/\\\\/g, '\\');
-    return `$$${fixed}$$`;
-  });
-  processed = processed.replace(/([^\n])\$\$/g, '$1\n$$');
-  processed = processed.replace(/\$\$([^\n])/g, '$$\n$1');
-  return processed;
-};
+import { MarkdownView } from './MarkdownView';
 
 interface InlineExamPanelProps {
   isOpen: boolean;
@@ -44,23 +15,13 @@ interface InlineExamPanelProps {
 
 // Component to display exam questions with answer hiding
 const ExamQuestionsDisplay: React.FC<{ content: string }> = ({ content }) => {
-  const remarkPlugins = useMemo(() => [remarkGfm, remarkMath], []);
-  const rehypePlugins = useMemo(() => [[rehypeKatex, katexOptions]], []);
-  
   // Remove source/answer hints for display
   let displayContent = content
     .split('\n')
     .filter(line => !line.includes('【答案来源】') && !line.includes('**[Source]**') && !line.includes('[Source]'))
     .join('\n');
   
-  return (
-    <ReactMarkdown 
-      remarkPlugins={remarkPlugins}
-      rehypePlugins={rehypePlugins as any}
-    >
-      {preprocessContent(displayContent)}
-    </ReactMarkdown>
-  );
+  return <MarkdownView content={displayContent} />;
 };
 
 export const InlineExamPanel: React.FC<InlineExamPanelProps> = ({
@@ -227,12 +188,7 @@ export const InlineExamPanel: React.FC<InlineExamPanelProps> = ({
                 </button>
               </div>
               <div className="bg-slate-800 rounded-lg p-4 markdown-body-dark text-sm">
-                <ReactMarkdown 
-                  remarkPlugins={[remarkGfm, remarkMath]}
-                  rehypePlugins={[[rehypeKatex, katexOptions] as any]}
-                >
-                  {preprocessContent(gradingResult)}
-                </ReactMarkdown>
+                <MarkdownView content={gradingResult} />
               </div>
             </div>
           ) : (

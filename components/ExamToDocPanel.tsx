@@ -1,8 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   FileImage, 
   X, 
@@ -26,6 +22,7 @@ import { generateStream } from '../services/aiService';
 import { downloadAsWord, downloadAsMarkdown, copyToClipboard } from '../services/documentService';
 import { PROMPTS } from '../constants';
 import { AppSettings } from '../types';
+import { MarkdownView } from './MarkdownView';
 
 interface ExamToDocPanelProps {
   isOpen: boolean;
@@ -541,12 +538,7 @@ export const ExamToDocPanel: React.FC<ExamToDocPanelProps> = ({
               <div className="p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
                 {showPreview ? (
                   <div className="markdown-body-dark text-xs prose prose-invert prose-sm max-w-none">
-                    <ReactMarkdown 
-                      remarkPlugins={[remarkGfm, remarkMath]}
-                      rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }] as any]}
-                    >
-                      {mergedContent}
-                    </ReactMarkdown>
+                    <MarkdownView content={mergedContent} />
                   </div>
                 ) : (
                   <textarea
