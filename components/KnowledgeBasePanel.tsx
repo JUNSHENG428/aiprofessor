@@ -336,7 +336,7 @@ export const KnowledgeBasePanel: React.FC<KnowledgeBasePanelProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="w-[420px] bg-white border-l border-gray-200 flex flex-col h-full shadow-xl flex-shrink-0">
+    <div className="w-[420px] bg-white/85 dark:bg-slate-900/80 backdrop-blur-xl border-l border-gray-200/70 dark:border-white/10 flex flex-col h-full shadow-xl shadow-black/20 flex-shrink-0">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-amber-500 to-orange-600">
         <div className="flex items-center justify-between">
@@ -497,13 +497,13 @@ export const KnowledgeBasePanel: React.FC<KnowledgeBasePanelProps> = ({
                               <div className="flex gap-1 ml-2">
                                 <button 
                                   onClick={() => openEditMode(concept)}
-                                  className="p-1 hover:bg-white/50 rounded"
+                                  className="p-1 hover:bg-white/50 dark:hover:bg-white/10 rounded"
                                 >
                                   <Edit3 size={12} />
                                 </button>
                                 <button 
                                   onClick={(e) => handleDeleteConcept(concept.id, e)}
-                                  className="p-1 hover:bg-white/50 rounded"
+                                  className="p-1 hover:bg-white/50 dark:hover:bg-white/10 rounded"
                                 >
                                   <Trash2 size={12} />
                                 </button>
@@ -531,12 +531,12 @@ export const KnowledgeBasePanel: React.FC<KnowledgeBasePanelProps> = ({
                                 )}
                                 <div className="flex gap-1 flex-wrap pt-1">
                                   {concept.tags.map(tag => (
-                                    <span key={tag} className="px-1.5 py-0.5 bg-white/50 rounded text-[10px]">
+                                    <span key={tag} className="px-1.5 py-0.5 bg-white/50 dark:bg-white/10 rounded text-[10px]">
                                       {tag}
                                     </span>
                                   ))}
                                   {concept.fileName && (
-                                    <span className="px-1.5 py-0.5 bg-white/50 rounded text-[10px] flex items-center gap-0.5">
+                                    <span className="px-1.5 py-0.5 bg-white/50 dark:bg-white/10 rounded text-[10px] flex items-center gap-0.5">
                                       <BookOpen size={10} />
                                       {concept.fileName}
                                     </span>

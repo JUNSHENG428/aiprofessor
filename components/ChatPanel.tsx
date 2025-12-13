@@ -15,7 +15,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ messages, isStreaming }) =
   }, [messages, isStreaming]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 bg-white shadow-inner markdown-body">
+    <div className="flex-1 overflow-y-auto p-6 bg-white/80 dark:bg-slate-950/20 backdrop-blur-sm shadow-inner markdown-body">
       {messages.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-gray-400">
           <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,10 +40,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ messages, isStreaming }) =
               >
                 {msg.role === 'model' && (
                   <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
-                    <div className="w-6 h-6 rounded-full bg-teal-600 flex items-center justify-center text-white text-xs font-bold">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500/90 via-fuchsia-500/80 to-sky-400/85 flex items-center justify-center text-white text-[10px] font-bold ring-1 ring-white/10">
                       AI
                     </div>
-                    <span className="text-sm font-semibold text-teal-700">Professor Gemini</span>
+                    <span className="text-sm font-semibold text-teal-700 dark:text-slate-200">Professor</span>
                   </div>
                 )}
                 <div className="prose prose-sm md:prose-base max-w-none text-slate-800">

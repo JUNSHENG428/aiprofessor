@@ -244,7 +244,7 @@ export const FlashcardsPanel: React.FC<FlashcardsPanelProps> = ({
   const currentReviewCard = reviewQueue[currentReviewIndex];
 
   return (
-    <div className="w-96 bg-white border-l border-gray-200 flex flex-col h-full shadow-xl flex-shrink-0">
+    <div className="w-96 bg-white/85 dark:bg-slate-900/80 backdrop-blur-xl border-l border-gray-200/70 dark:border-white/10 flex flex-col h-full shadow-xl shadow-black/20 flex-shrink-0">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-violet-500 to-purple-600">
         <div className="flex items-center justify-between">

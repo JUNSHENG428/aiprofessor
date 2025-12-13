@@ -25,6 +25,40 @@ interface NotesOrganizerPageProps {
   onBack: () => void;
 }
 
+const BrandMarkMini = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 64 64"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <path
+      d="M32 4C16.536 4 4 16.536 4 32s12.536 28 28 28 28-12.536 28-28S47.464 4 32 4Z"
+      stroke="currentColor"
+      strokeOpacity="0.22"
+      strokeWidth="2"
+    />
+    <defs>
+      <linearGradient id="brand_g_notes" x1="12" y1="12" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#6366F1" />
+        <stop offset="0.55" stopColor="#A855F7" />
+        <stop offset="1" stopColor="#38BDF8" />
+      </linearGradient>
+    </defs>
+    <path
+      d="M32 12c11.046 0 20 8.954 20 20s-8.954 20-20 20-20-8.954-20-20 8.954-20 20-20Z"
+      fill="url(#brand_g_notes)"
+      fillOpacity="0.95"
+    />
+    <path
+      d="M32 21.5l9.5 21h-4.2l-2.1-4.9H28.8l-2.1 4.9h-4.2l9.5-21Zm1.7 12.7-2.8-6.7-2.8 6.7h5.6Z"
+      fill="white"
+      fillOpacity="0.96"
+    />
+  </svg>
+);
+
 const NOTES_ORGANIZER_PROMPT = `
 # 📚 Exam Revision Note Organizer / 考试复习笔记整理助手
 
@@ -1010,12 +1044,12 @@ ${organizedNotes.slice(-3000)}
               <ArrowLeft size={20} />
             </button>
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg shadow-purple-500/30">
-                <BookOpen size={24} />
+              <div className="p-1.5 bg-white/5 border border-white/10 rounded-2xl shadow-lg shadow-indigo-500/20 backdrop-blur-md">
+                <BrandMarkMini className="w-10 h-10 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">📚 整理笔记助手</h1>
-                <p className="text-xs text-purple-300">Notes Organizer - AI-Powered Study Helper</p>
+                <h1 className="text-xl font-bold">Notes Organizer</h1>
+                <p className="text-xs text-purple-300">Pro • Deep Dark</p>
               </div>
             </div>
           </div>
