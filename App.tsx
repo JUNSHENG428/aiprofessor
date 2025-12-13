@@ -174,6 +174,12 @@ const App: React.FC = () => {
       setShowSettings(true);
     }
   }, [settings]);
+
+  // Deep Pro theme: force Tailwind dark mode (class-based)
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+    return () => document.documentElement.classList.remove('dark');
+  }, []);
   
   useEffect(() => {
     if (lectureState.currentBatch[0] > 0) {
@@ -988,7 +994,7 @@ const App: React.FC = () => {
   // Main Lecture Page
   return (
     <ToastContainer>
-    <div className="flex flex-col h-screen bg-transparent text-gray-900 font-sans overflow-hidden apple-bg">
+    <div className="flex flex-col h-screen bg-transparent text-gray-900 dark:text-slate-100 font-sans overflow-hidden apple-bg">
       <SettingsModal 
         isOpen={showSettings} 
         onClose={() => setShowSettings(false)} 
@@ -997,7 +1003,7 @@ const App: React.FC = () => {
       />
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shadow-sm z-20">
+      <header className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border-b border-gray-200/60 dark:border-white/10 px-6 py-3 flex items-center justify-between shadow-sm dark:shadow-black/30 z-20">
         <div className="flex items-center gap-3">
           <div className="bg-indigo-600 p-2 rounded-lg text-white">
             <GraduationCap size={24} />

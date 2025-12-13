@@ -352,6 +352,89 @@ body.theme-dark .apple-card {
 }
 
 /* ========================================
+   Tailwind dark mode (.dark) overrides
+   - 本项目用 CDN Tailwind，darkMode=class
+   ======================================== */
+.dark body,
+body.dark {
+  background: #0b1220;
+  color: #e2e8f0;
+  color-scheme: dark;
+}
+
+.dark .apple-bg {
+  background:
+    radial-gradient(1200px 600px at 10% 10%, rgba(99, 102, 241, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 90% 20%, rgba(168, 85, 247, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 70% 90%, rgba(56, 189, 248, 0.18), transparent 55%),
+    #0b1220;
+}
+
+.dark .apple-card {
+  background: rgba(15, 23, 42, 0.66);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.dark .apple-bar {
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+}
+
+/* Markdown：在深色模式下让 markdown-body 自动变成暗色，避免全站逐个替换 class */
+.dark .markdown-body h1,
+.dark .markdown-body h2,
+.dark .markdown-body h3 {
+  color: #e2e8f0;
+}
+.dark .markdown-body h2 {
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+.dark .markdown-body p,
+.dark .markdown-body li,
+.dark .markdown-body ul,
+.dark .markdown-body ol {
+  color: #cbd5e1;
+}
+.dark .markdown-body blockquote {
+  border-left-color: #8b5cf6;
+  background-color: rgba(30, 27, 75, 0.8);
+  color: #a5b4fc;
+}
+.dark .markdown-body code {
+  background-color: rgba(30, 41, 59, 0.9);
+  color: #fca5a5;
+}
+.dark .markdown-body pre {
+  background-color: rgba(2, 6, 23, 0.7);
+}
+.dark .markdown-body strong {
+  color: #f1f5f9;
+}
+.dark .markdown-body th {
+  background-color: rgba(30, 41, 59, 0.7);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+}
+.dark .markdown-body td {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+.dark .markdown-body tr:nth-child(even) {
+  background-color: rgba(30, 41, 59, 0.35);
+}
+
+/* KaTeX：深色下提升对比度（index.html 里也有 katex 相关样式，这里用于覆盖） */
+.dark .markdown-body .katex-display {
+  background: rgba(15, 23, 42, 0.55);
+  border-left-color: rgba(99, 102, 241, 0.7);
+}
+.dark .markdown-body .katex {
+  color: #e2e8f0;
+}
+
+/* ========================================
    Notes Organizer Page Styles
    ======================================== */
 
