@@ -42,6 +42,9 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: #f5f5f7;
+  color: #0f172a;
+  color-scheme: light;
 }
 
 /* Markdown Content Styles */
@@ -275,6 +278,77 @@ textarea:focus-visible {
 .resizing * {
   user-select: none !important;
   -webkit-user-select: none !important;
+}
+
+/* ========================================
+   Apple-like UI tokens (Light by default)
+   - 用 class 驱动，不强行改动现有 Tailwind 布局
+   ======================================== */
+:root {
+  --apple-bg: #f5f5f7;
+  --apple-surface: rgba(255, 255, 255, 0.78);
+  --apple-surface-strong: rgba(255, 255, 255, 0.92);
+  --apple-border: rgba(15, 23, 42, 0.08);
+  --apple-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --apple-shadow-soft: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+/* 页面背景（类似 macOS / iOS 的柔和渐变 + 微弱高光） */
+.apple-bg {
+  background:
+    radial-gradient(1200px 600px at 10% 10%, rgba(99, 102, 241, 0.10), transparent 55%),
+    radial-gradient(900px 500px at 90% 20%, rgba(168, 85, 247, 0.10), transparent 55%),
+    radial-gradient(900px 500px at 70% 90%, rgba(56, 189, 248, 0.10), transparent 55%),
+    var(--apple-bg);
+}
+
+/* 玻璃卡片 */
+.apple-card {
+  background: var(--apple-surface);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--apple-border);
+  box-shadow: var(--apple-shadow);
+  border-radius: 20px;
+}
+
+/* 轻量卡片 / 工具条 */
+.apple-bar {
+  background: var(--apple-surface-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--apple-border);
+  box-shadow: var(--apple-shadow-soft);
+  border-radius: 16px;
+}
+
+/* 细分割线（1px hairline） */
+.apple-hairline {
+  background: rgba(15, 23, 42, 0.10);
+}
+
+/* Dark mode opt-in：给根节点加 .theme-dark（例如 <body class="theme-dark"> 或外层容器） */
+.theme-dark {
+  color-scheme: dark;
+}
+.theme-dark body,
+body.theme-dark {
+  background: #0b1220;
+  color: #e2e8f0;
+}
+.theme-dark .apple-bg,
+body.theme-dark .apple-bg {
+  background:
+    radial-gradient(1200px 600px at 10% 10%, rgba(99, 102, 241, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 90% 20%, rgba(168, 85, 247, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 70% 90%, rgba(56, 189, 248, 0.18), transparent 55%),
+    #0b1220;
+}
+.theme-dark .apple-card,
+body.theme-dark .apple-card {
+  background: rgba(15, 23, 42, 0.66);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
 /* ========================================

@@ -988,7 +988,7 @@ const App: React.FC = () => {
   // Main Lecture Page
   return (
     <ToastContainer>
-    <div className="flex flex-col h-screen bg-gray-100 text-gray-900 font-sans overflow-hidden">
+    <div className="flex flex-col h-screen bg-transparent text-gray-900 font-sans overflow-hidden apple-bg">
       <SettingsModal 
         isOpen={showSettings} 
         onClose={() => setShowSettings(false)} 
