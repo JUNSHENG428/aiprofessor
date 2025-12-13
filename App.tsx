@@ -990,6 +990,55 @@ const App: React.FC = () => {
       </ToastContainer>
     );
   }
+
+  const ProPillButton = (props: {
+    icon: React.ReactNode;
+    label: string;
+    title?: string;
+    active?: boolean;
+    onClick?: () => void;
+    badgeText?: string;
+    className?: string;
+  }) => {
+    const { icon, label, title, active, onClick, badgeText, className } = props;
+    return (
+      <button
+        type="button"
+        title={title ?? label}
+        onClick={onClick}
+        className={[
+          // shape + layout
+          'relative inline-flex items-center gap-2 px-3 py-1.5 rounded-full',
+          // typography
+          'text-xs font-medium tracking-tight',
+          // surface
+          'bg-white/40 dark:bg-white/5 backdrop-blur-md',
+          'border border-gray-200/70 dark:border-white/10',
+          // transitions
+          'transition-all duration-200',
+          // hover (统一发光强度)
+          'hover:bg-white/60 dark:hover:bg-white/8',
+          'hover:border-gray-300/70 dark:hover:border-white/15',
+          'hover:shadow-[0_8px_24px_rgba(99,102,241,0.14)] dark:hover:shadow-[0_10px_30px_rgba(99,102,241,0.18)]',
+          // active (统一发光强度，略强于 hover)
+          active
+            ? 'text-gray-900 dark:text-white shadow-[0_10px_30px_rgba(99,102,241,0.22)] dark:shadow-[0_12px_40px_rgba(99,102,241,0.24)] bg-white/70 dark:bg-white/10 border-gray-300/70 dark:border-white/20'
+            : 'text-gray-700 dark:text-slate-200/85',
+          className ?? '',
+        ].join(' ')}
+      >
+        <span className={active ? 'text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300'}>
+          {icon}
+        </span>
+        <span className="hidden sm:inline">{label}</span>
+        {badgeText && (
+          <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] leading-none bg-indigo-600/10 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-200 border border-indigo-500/10 dark:border-indigo-400/20">
+            {badgeText}
+          </span>
+        )}
+      </button>
+    );
+  };
   
   // Main Lecture Page
   return (
@@ -1014,168 +1063,117 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-           {/* Notes Organizer Button */}
-           <Button 
-             variant="ghost" 
-             size="sm" 
-             onClick={() => setCurrentPage('notes-organizer')} 
-             title="整理笔记助手"
-              className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 hover:from-purple-200 hover:to-pink-200 dark:from-purple-500/20 dark:to-pink-500/20 dark:text-purple-200 dark:hover:from-purple-500/30 dark:hover:to-pink-500/30"
-           >
-             <NotebookPen size={18} className="mr-1.5" />
-             <span className="hidden sm:inline">笔记整理</span>
-           </Button>
-           
-           {/* Exam to Document Button */}
-           <Button 
-             variant="ghost" 
-             size="sm" 
-             onClick={() => setShowExamToDoc(!showExamToDoc)} 
-             title="试卷转文档"
-              className={showExamToDoc 
-                ? "bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-700 dark:from-teal-500/20 dark:to-cyan-500/20 dark:text-teal-200" 
-                : "bg-gradient-to-r from-teal-50 to-cyan-50 text-teal-600 hover:from-teal-100 hover:to-cyan-100 dark:from-teal-500/10 dark:to-cyan-500/10 dark:text-teal-200 dark:hover:from-teal-500/20 dark:hover:to-cyan-500/20"
-              }
-           >
-             <ScanText size={18} className="mr-1.5" />
-             <span className="hidden sm:inline">试卷转文档</span>
-           </Button>
-           
-           {/* 智能闪卡按钮 */}
-           <Button 
-             variant="ghost" 
-             size="sm" 
-             onClick={() => { setShowFlashcards(!showFlashcards); setShowMindMap(false); setShowKnowledge(false); setShowFormula(false); }} 
-             title="智能闪卡"
-              className={showFlashcards 
-                ? "bg-gradient-to-r from-violet-100 to-purple-100 text-violet-700 dark:from-violet-500/20 dark:to-purple-500/20 dark:text-violet-200" 
-                : "bg-gradient-to-r from-violet-50 to-purple-50 text-violet-600 hover:from-violet-100 hover:to-purple-100 dark:from-violet-500/10 dark:to-purple-500/10 dark:text-violet-200 dark:hover:from-violet-500/20 dark:hover:to-purple-500/20"
-              }
-           >
-             <Layers size={18} className="mr-1.5" />
-             <span className="hidden sm:inline">闪卡</span>
-           </Button>
-           
-           {/* 思维导图按钮 */}
-           <Button 
-             variant="ghost" 
-             size="sm" 
-             onClick={() => { setShowMindMap(!showMindMap); setShowFlashcards(false); setShowKnowledge(false); setShowFormula(false); }} 
-             title="思维导图"
-              className={showMindMap 
-                ? "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 dark:from-emerald-500/20 dark:to-teal-500/20 dark:text-emerald-200" 
-                : "bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-600 hover:from-emerald-100 hover:to-teal-100 dark:from-emerald-500/10 dark:to-teal-500/10 dark:text-emerald-200 dark:hover:from-emerald-500/20 dark:hover:to-teal-500/20"
-              }
-           >
-             <GitBranch size={18} className="mr-1.5" />
-             <span className="hidden sm:inline">导图</span>
-           </Button>
-           
-           {/* 知识库按钮 - 显示知识数量 */}
-           <Button 
-             variant="ghost" 
-             size="sm" 
-             onClick={() => { setShowKnowledge(!showKnowledge); setShowFlashcards(false); setShowMindMap(false); setShowFormula(false); }} 
-             title={`知识库 (${knowledgeStats.totalConcepts} 概念, ${knowledgeStats.totalFormulas} 公式) - AI 会调用已学知识优化回答`}
-              className={`relative ${showKnowledge 
-                ? "bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 dark:from-amber-500/20 dark:to-orange-500/20 dark:text-amber-200" 
-                : "bg-gradient-to-r from-amber-50 to-orange-50 text-amber-600 hover:from-amber-100 hover:to-orange-100 dark:from-amber-500/10 dark:to-orange-500/10 dark:text-amber-200 dark:hover:from-amber-500/20 dark:hover:to-orange-500/20"
-              }`}
-           >
-             <Database size={18} className="mr-1.5" />
-             <span className="hidden sm:inline">知识库</span>
-             {(knowledgeStats.totalConcepts + knowledgeStats.totalFormulas) > 0 && (
-               <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                 {knowledgeStats.totalConcepts + knowledgeStats.totalFormulas > 99 ? '99+' : knowledgeStats.totalConcepts + knowledgeStats.totalFormulas}
-               </span>
-             )}
-           </Button>
-           
-           {/* 公式讲解按钮 */}
-           <Button 
-             variant="ghost" 
-             size="sm" 
-             onClick={() => { setShowFormula(!showFormula); setShowFlashcards(false); setShowMindMap(false); setShowKnowledge(false); }} 
-             title="公式讲解"
-              className={showFormula 
-                ? "bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-700 dark:from-indigo-500/20 dark:to-sky-500/20 dark:text-indigo-200" 
-                : "bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-600 hover:from-indigo-100 hover:to-blue-100 dark:from-indigo-500/10 dark:to-sky-500/10 dark:text-indigo-200 dark:hover:from-indigo-500/20 dark:hover:to-sky-500/20"
-              }
-           >
-             <Calculator size={18} className="mr-1.5" />
-             <span className="hidden sm:inline">公式</span>
-           </Button>
-           
-          <div className="h-6 w-px bg-gray-200 dark:bg-white/10 mx-1"></div>
-           
-           {/* Files Manager Toggle */}
-           <Button 
-             variant="ghost" 
-             size="sm" 
-             onClick={() => setShowFiles(!showFiles)} 
-             title={showFiles ? "Hide Files" : "Show Files"}
-            className={showFiles ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200" : ""}
-           >
-             <FolderOpen size={18} />
-           </Button>
-           
-           {/* Notes Toggle */}
-           <Button 
-             variant="ghost" 
-             size="sm" 
-             onClick={() => setShowNotes(!showNotes)} 
-             title={showNotes ? "Hide Notes" : "Show Notes"}
-            className={showNotes ? "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200" : ""}
-           >
-             {showNotes ? <PanelRightClose size={18} /> : <StickyNote size={18} />}
-           </Button>
-           
-           {/* Save Session */}
-           {messages.length > 0 && (
-             <Button 
-               variant="ghost" 
-               size="sm" 
-               onClick={saveCurrentSessionAsync} 
-               disabled={isSaving}
-               title={lastSaved ? `Last saved: ${lastSaved.toLocaleTimeString()}` : "Save Session"}
-              className={lastSaved ? "text-green-600 dark:text-emerald-300" : ""}
-             >
-               {isSaving ? (
-                <div className="animate-spin h-4 w-4 border-2 border-gray-400 border-t-indigo-600 dark:border-slate-500 dark:border-t-indigo-400 rounded-full" />
-               ) : lastSaved ? (
-                 <Cloud size={18} />
-               ) : (
-                 <Save size={18} />
-               )}
-             </Button>
-           )}
-           
-          <div className="h-6 w-px bg-gray-200 dark:bg-white/10 mx-1"></div>
-           
-           <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)}>
-             <Settings size={18} className="mr-2" />
-             Config
-           </Button>
-           
-          <div className="h-6 w-px bg-gray-200 dark:bg-white/10 mx-1"></div>
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <ProPillButton
+            icon={<NotebookPen size={16} />}
+            label="笔记"
+            title="整理笔记助手"
+            onClick={() => setCurrentPage('notes-organizer')}
+          />
 
-           <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-             <Upload size={18} className="mr-2" />
-             {lectureState.file ? 'Change PDF' : (lectureState.parsedPages.length > 0 ? 'Re-upload PDF' : 'Upload PDF')}
-           </Button>
-           <input type="file" ref={fileInputRef} className="hidden" accept=".pdf" onChange={handleFileChange} />
-           
-           {(lectureState.file || lectureState.parsedPages.length > 0) && (
-             <>
-                <Button variant="ghost" size="sm" onClick={handleExport} title="Export Notes">
-                  <Download size={18} />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => setShowPdf(!showPdf)} className="hidden md:flex" title="Toggle PDF View">
-                  <FileText size={18} className={showPdf ? "text-indigo-600" : "text-gray-400 dark:text-slate-500"} />
-                </Button>
-             </>
-           )}
+          <ProPillButton
+            icon={<ScanText size={16} />}
+            label="OCR"
+            title="试卷转文档"
+            onClick={() => setShowExamToDoc(!showExamToDoc)}
+            active={showExamToDoc}
+          />
+
+          <ProPillButton
+            icon={<Layers size={16} />}
+            label="闪卡"
+            title="智能闪卡"
+            onClick={() => { setShowFlashcards(!showFlashcards); setShowMindMap(false); setShowKnowledge(false); setShowFormula(false); }}
+            active={showFlashcards}
+          />
+
+          <ProPillButton
+            icon={<GitBranch size={16} />}
+            label="导图"
+            title="思维导图"
+            onClick={() => { setShowMindMap(!showMindMap); setShowFlashcards(false); setShowKnowledge(false); setShowFormula(false); }}
+            active={showMindMap}
+          />
+
+          <ProPillButton
+            icon={<Database size={16} />}
+            label="知识"
+            title={`知识库 (${knowledgeStats.totalConcepts} 概念, ${knowledgeStats.totalFormulas} 公式) - AI 会调用已学知识优化回答`}
+            badgeText={(knowledgeStats.totalConcepts + knowledgeStats.totalFormulas) > 0 ? `${knowledgeStats.totalConcepts + knowledgeStats.totalFormulas}` : undefined}
+            onClick={() => { setShowKnowledge(!showKnowledge); setShowFlashcards(false); setShowMindMap(false); setShowFormula(false); }}
+            active={showKnowledge}
+          />
+
+          <ProPillButton
+            icon={<Calculator size={16} />}
+            label="公式"
+            title="公式讲解"
+            onClick={() => { setShowFormula(!showFormula); setShowFlashcards(false); setShowMindMap(false); setShowKnowledge(false); }}
+            active={showFormula}
+          />
+
+          <div className="h-6 w-px bg-gray-200/70 dark:bg-white/10 mx-1 hidden sm:block" />
+
+          <ProPillButton
+            icon={<FolderOpen size={16} />}
+            label="文件"
+            title={showFiles ? "Hide Files" : "Show Files"}
+            onClick={() => setShowFiles(!showFiles)}
+            active={showFiles}
+          />
+
+          <ProPillButton
+            icon={showNotes ? <PanelRightClose size={16} /> : <StickyNote size={16} />}
+            label="笔记条"
+            title={showNotes ? "Hide Notes" : "Show Notes"}
+            onClick={() => setShowNotes(!showNotes)}
+            active={showNotes}
+          />
+
+          {messages.length > 0 && (
+            <ProPillButton
+              icon={isSaving ? <RefreshCw size={16} className="animate-spin" /> : (lastSaved ? <Cloud size={16} /> : <Save size={16} />)}
+              label="保存"
+              title={lastSaved ? `Last saved: ${lastSaved.toLocaleTimeString()}` : "Save Session"}
+              onClick={saveCurrentSessionAsync}
+              active={!!lastSaved}
+            />
+          )}
+
+          <ProPillButton
+            icon={<Settings size={16} />}
+            label="设置"
+            title="Settings"
+            onClick={() => setShowSettings(true)}
+          />
+
+          <ProPillButton
+            icon={<Upload size={16} />}
+            label={lectureState.file ? '换PDF' : (lectureState.parsedPages.length > 0 ? '重传' : '上传')}
+            title="Upload PDF"
+            onClick={() => fileInputRef.current?.click()}
+          />
+          <input type="file" ref={fileInputRef} className="hidden" accept=".pdf" onChange={handleFileChange} />
+
+          {(lectureState.file || lectureState.parsedPages.length > 0) && (
+            <>
+              <ProPillButton
+                icon={<Download size={16} />}
+                label="导出"
+                title="Export Notes"
+                onClick={handleExport}
+              />
+              <div className="hidden md:block">
+                <ProPillButton
+                  icon={<FileText size={16} />}
+                  label={showPdf ? "PDF开" : "PDF关"}
+                  title="Toggle PDF View"
+                  onClick={() => setShowPdf(!showPdf)}
+                  active={showPdf}
+                />
+              </div>
+            </>
+          )}
         </div>
       </header>
 
