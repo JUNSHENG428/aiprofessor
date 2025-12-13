@@ -397,7 +397,7 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="w-[480px] bg-white border-l border-gray-200 flex flex-col h-full shadow-xl">
+    <div className="w-[480px] bg-white border-l border-gray-200 flex flex-col h-full shadow-xl flex-shrink-0">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-600 to-blue-600">
         <div className="flex items-center justify-between">
