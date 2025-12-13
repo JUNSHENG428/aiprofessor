@@ -166,6 +166,11 @@ const generateGeminiStream = async (
       if (text) onChunk(text);
     }
   } catch (error: any) {
+    // 如果是用户中断，不显示错误
+    if (error.message === 'AbortError' || signal.aborted) {
+      return;
+    }
+    
     console.error("Gemini Error:", error);
     
     // 处理常见的 Gemini API 错误
@@ -173,10 +178,16 @@ const generateGeminiStream = async (
     
     if (errorMessage.includes('Content Exists Risk') || errorMessage.includes('SAFETY')) {
       errorMessage = '内容被安全过滤器拦截。请尝试上传不同的 PDF 文件，或调整内容后重试。';
-    } else if (errorMessage.includes('API_KEY')) {
+    } else if (errorMessage.includes('API_KEY') || errorMessage.includes('invalid')) {
       errorMessage = 'API Key 无效或已过期，请检查设置。';
-    } else if (errorMessage.includes('QUOTA') || errorMessage.includes('429')) {
-      errorMessage = 'API 配额已用尽，请稍后重试或使用其他 API Key。';
+    } else if (errorMessage.includes('QUOTA') || errorMessage.includes('429') || errorMessage.includes('rate')) {
+      errorMessage = 'API 配额已用尽或请求过于频繁，请稍后重试。';
+    } else if (errorMessage.includes('network') || errorMessage.includes('fetch') || errorMessage.includes('Failed to fetch')) {
+      errorMessage = '网络连接失败，请检查网络后重试。';
+    } else if (errorMessage.includes('timeout')) {
+      errorMessage = '请求超时，请稍后重试。';
+    } else if (errorMessage.includes('model')) {
+      errorMessage = '模型不可用或不支持，请尝试其他模型。';
     }
     
     onChunk(`\n\n**❌ 错误:** ${errorMessage}`);

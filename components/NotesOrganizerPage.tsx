@@ -1,6 +1,8 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { parsePDF } from '../services/pdfService';
 import { generateStream, stopGeneration } from '../services/aiService';
 import { AppSettings, ParsedPage } from '../types';
@@ -1434,7 +1436,8 @@ ${organizedNotes.slice(-3000)}
                       />
                     ) : (
                       <ReactMarkdown 
-                        remarkPlugins={[remarkGfm]}
+                        remarkPlugins={[remarkGfm, remarkMath]}
+                        rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }] as any]}
                         components={{
                           // 主题标题 - 大卡片样式
                           h2: ({children}) => (

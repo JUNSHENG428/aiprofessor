@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { 
   Calculator, Plus, Sparkles, X, Search, Trash2, Edit3, Copy,
   ChevronDown, ChevronRight, BookOpen, Zap, Filter, Download,
@@ -723,7 +725,10 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
                 </div>
               ) : null}
               <div className="markdown-body">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm, remarkMath]}
+                  rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }] as any]}
+                >
                   {explanation || '正在分析公式...'}
                 </ReactMarkdown>
               </div>
@@ -789,7 +794,10 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
             {/* 已保存的讲解 */}
             {selectedFormula.explanation ? (
               <div className="prose prose-sm max-w-none markdown-body">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm, remarkMath]}
+                  rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }] as any]}
+                >
                   {selectedFormula.explanation}
                 </ReactMarkdown>
               </div>
