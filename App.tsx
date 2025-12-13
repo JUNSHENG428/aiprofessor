@@ -9,7 +9,13 @@ import { PdfViewer } from './components/PdfViewer';
 import { InlineNotesPanel } from './components/InlineNotesPanel';
 import { InlineFilesPanel } from './components/InlineFilesPanel';
 import { InlineExamPanel } from './components/InlineExamPanel';
+import { ExamToDocPanel } from './components/ExamToDocPanel';
 import { NotesOrganizerPage } from './components/NotesOrganizerPage';
+import { FlashcardsPanel } from './components/FlashcardsPanel';
+import { MindMapPanel } from './components/MindMapPanel';
+import { KnowledgeBasePanel } from './components/KnowledgeBasePanel';
+import { FormulaExplainerPanel } from './components/FormulaExplainerPanel';
+import { ToastContainer } from './components/Toast';
 import { parsePDF } from './services/pdfService';
 import { generateStream, stopGeneration } from './services/aiService';
 import { 
@@ -18,11 +24,13 @@ import {
   getAutoSave, 
   autoSave, 
   clearAutoSave,
-  getStorageStats 
+  getStorageStats,
+  getAugmentedContext,
+  getKnowledgeStats
 } from './services/storageService';
 import { ParsedPage, LectureState, Message, LectureMode, AppSettings, DEFAULT_SETTINGS, FileRecord, Session, Note, TeachingStyle } from './types';
 import { PROMPTS, TEACHING_STYLES } from './constants';
-import { BookOpen, Settings, Upload, FileText, ChevronLeft, ChevronRight, Download, Send, GraduationCap, ClipboardCheck, X, GripVertical, FolderOpen, StickyNote, Save, PanelRightOpen, PanelRightClose, Square, ImagePlus, Clipboard, Trash2, Cloud, CloudOff, RefreshCw, Sparkles, MessageCircle, NotebookPen } from 'lucide-react';
+import { BookOpen, Settings, Upload, FileText, ChevronLeft, ChevronRight, Download, Send, GraduationCap, ClipboardCheck, X, GripVertical, FolderOpen, StickyNote, Save, PanelRightOpen, PanelRightClose, Square, ImagePlus, Clipboard, Trash2, Cloud, CloudOff, RefreshCw, Sparkles, MessageCircle, NotebookPen, ScanText, Layers, GitBranch, Database, Calculator } from 'lucide-react';
 
 // Page types
 type PageType = 'lecture' | 'notes-organizer';
@@ -65,7 +73,14 @@ const App: React.FC = () => {
   // New Panel States
   const [showNotes, setShowNotes] = useState(false);
   const [showFiles, setShowFiles] = useState(false);
+  const [showExamToDoc, setShowExamToDoc] = useState(false);
   const [currentFileId, setCurrentFileId] = useState<string | null>(null);
+  
+  // 新功能面板状态
+  const [showFlashcards, setShowFlashcards] = useState(false);
+  const [showMindMap, setShowMindMap] = useState(false);
+  const [showKnowledge, setShowKnowledge] = useState(false);
+  const [showFormula, setShowFormula] = useState(false);
   
   // Image upload state for chat
   const [chatImages, setChatImages] = useState<string[]>([]);
@@ -79,6 +94,14 @@ const App: React.FC = () => {
     start?: number;
     end?: number;
   } | null>(null);
+
+  // 获取当前讲解内容（用于生成闪卡/思维导图/知识库）
+  const getCurrentLectureContent = (): string => {
+    const modelMessages = messages.filter(m => m.role === 'model');
+    if (modelMessages.length === 0) return '';
+    // 获取最近的讲解内容
+    return modelMessages.slice(-3).map(m => m.content).join('\n\n');
+  };
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -86,6 +109,9 @@ const App: React.FC = () => {
 
   // Implementation of independent PDF navigation
   const [viewPage, setViewPage] = useState<number>(1);
+  
+  // 拖拽上传状态
+  const [isDragging, setIsDragging] = useState(false);
 
   // Resizable panel state
   const [pdfPanelWidth, setPdfPanelWidth] = useState<number>(() => {
@@ -151,6 +177,77 @@ const App: React.FC = () => {
         setViewPage(lectureState.currentBatch[0]);
     }
   }, [lectureState.currentBatch]);
+
+  // 键盘快捷键
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 如果正在输入，不触发快捷键
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      
+      // Ctrl/Cmd + 方向键：切换批次
+      if ((e.ctrlKey || e.metaKey) && !isGenerating) {
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          handlePrevBatch();
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          handleNextBatch();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          handleStartLecture();
+        }
+      }
+      
+      // 方向键：翻页
+      if (!e.ctrlKey && !e.metaKey && lectureState.totalPages > 0) {
+        if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+          setViewPage(p => Math.max(1, p - 1));
+        } else if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+          setViewPage(p => Math.min(lectureState.totalPages, p + 1));
+        }
+      }
+      
+      // Escape：关闭面板
+      if (e.key === 'Escape') {
+        setShowMockExam(false);
+        setShowNotes(false);
+        setShowExamToDoc(false);
+        setShowStylePicker(false);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isGenerating, lectureState.totalPages]);
+
+  // 拖拽上传处理
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.type === 'application/pdf') {
+        processFile(file);
+      }
+    }
+  }, []);
 
   // --- Handlers ---
 
@@ -368,20 +465,42 @@ const App: React.FC = () => {
   };
 
   // Build conversation context for multi-turn dialogue
-  const buildConversationContext = () => {
-    if (!settings.enableContext || messages.length === 0) return '';
+  const buildConversationContext = (currentQuery?: string, pageContent?: string) => {
+    let fullContext = '';
     
-    const recentMessages = messages.slice(-(settings.contextTurns * 2));
-    if (recentMessages.length === 0) return '';
+    // 1. 从知识库检索相关知识（RAG 增强）
+    const knowledgeContext = getAugmentedContext(
+      currentQuery || '', 
+      pageContent || getBatchContent(
+        lectureState.currentBatch[0], 
+        lectureState.currentBatch[1], 
+        lectureState.parsedPages
+      ).substring(0, 500)
+    );
     
-    const context = recentMessages.map(m => {
-      const role = m.role === 'user' ? 'Student' : 'Professor';
-      const content = m.content.length > 500 ? m.content.substring(0, 500) + '...' : m.content;
-      return `${role}: ${content}`;
-    }).join('\n\n');
+    if (knowledgeContext) {
+      fullContext += knowledgeContext;
+    }
     
-    return `\n\n**Previous Conversation Context (for reference):**\n"""\n${context}\n"""\n\nNow continue the lecture naturally, building on what was discussed before.\n`;
+    // 2. 对话上下文
+    if (settings.enableContext && messages.length > 0) {
+      const recentMessages = messages.slice(-(settings.contextTurns * 2));
+      if (recentMessages.length > 0) {
+        const conversationContext = recentMessages.map(m => {
+          const role = m.role === 'user' ? 'Student' : 'Professor';
+          const content = m.content.length > 500 ? m.content.substring(0, 500) + '...' : m.content;
+          return `${role}: ${content}`;
+        }).join('\n\n');
+        
+        fullContext += `\n\n**Previous Conversation Context (for reference):**\n"""\n${conversationContext}\n"""\n\nNow continue the lecture naturally, building on what was discussed before.\n`;
+      }
+    }
+    
+    return fullContext;
   };
+  
+  // 获取知识库统计（用于显示学习进度）
+  const knowledgeStats = getKnowledgeStats();
 
   const triggerBatchExplanation = async (start: number, end: number, pages = lectureState.parsedPages) => {
     if (!settings.apiKey && settings.provider !== 'ollama') {
@@ -394,11 +513,16 @@ const App: React.FC = () => {
     
     // Build prompt with teaching style modifier
     const styleModifier = TEACHING_STYLES[settings.teachingStyle]?.modifier || '';
-    const customPromptAddition = settings.customPrompt ? `\n\n**Additional Instructions from User:**\n${settings.customPrompt}\n` : '';
-    const contextAddition = buildConversationContext();
+    // 使用知识库增强的上下文
+    const contextAddition = buildConversationContext('lecture explanation', content);
     
     let prompt = PROMPTS.EXPLAIN_BATCH(content, start, end);
-    prompt = `**Teaching Style**: ${styleModifier}\n${customPromptAddition}${contextAddition}\n\n${prompt}`;
+    prompt = `**Teaching Style**: ${styleModifier}\n${contextAddition}\n\n${prompt}`;
+    
+    // 用户自定义 prompt 放在最后，优先级最高
+    if (settings.customPrompt && settings.customPrompt.trim()) {
+      prompt = `${prompt}\n\n---\n\n## ⚠️ 重要：用户自定义要求（必须优先遵循）\n\n${settings.customPrompt.trim()}\n\n请务必按照上述用户要求调整你的输出格式和内容。`;
+    }
     
     // Save for regeneration
     setLastPromptData({ type: 'lecture', prompt, images, start, end });
@@ -545,14 +669,18 @@ const App: React.FC = () => {
     const slideImages = getBatchImages(start, end, lectureState.parsedPages);
     const allImages = [...currentImages, ...slideImages];
 
-    // Build multi-turn conversation context
-    const conversationContext = settings.enableContext ? buildConversationContext() : '';
+    // Build multi-turn conversation context with knowledge augmentation
+    const conversationContext = buildConversationContext(currentText, batchContent);
     const styleModifier = TEACHING_STYLES[settings.teachingStyle]?.modifier || '';
-    const customPromptAddition = settings.customPrompt ? `\n\nAdditional Instructions: ${settings.customPrompt}` : '';
+    
+    // 用户自定义 prompt 放在最后，优先级最高
+    const customPromptSection = settings.customPrompt && settings.customPrompt.trim() 
+      ? `\n\n---\n⚠️ **用户自定义要求（必须优先遵循）**:\n${settings.customPrompt.trim()}\n请务必按照上述用户要求调整你的回答。`
+      : '';
 
     const contextPrompt = currentImages.length > 0 
       ? `
-      **Teaching Style**: ${styleModifier}${customPromptAddition}
+      **Teaching Style**: ${styleModifier}
       ${conversationContext}
       
       Context: User is asking about Slides ${start}-${end} and has uploaded ${currentImages.length} image(s).
@@ -561,15 +689,17 @@ const App: React.FC = () => {
       The user has attached image(s) for you to analyze. Please examine them carefully and incorporate your observations into your response.
       
       User Question: ${currentText || "Please analyze the attached image(s)."}
+      ${customPromptSection}
     `
       : `
-      **Teaching Style**: ${styleModifier}${customPromptAddition}
+      **Teaching Style**: ${styleModifier}
       ${conversationContext}
       
       Context: User is asking about Slides ${start}-${end}.
       Current Slides Content: """${batchContent}"""
       
       User Question: ${currentText}
+      ${customPromptSection}
     `;
 
     // Save for regeneration
@@ -783,20 +913,37 @@ const App: React.FC = () => {
     a.click();
   };
 
+  // 收藏消息
+  const handleSaveMessage = (index: number) => {
+    setMessages(prev => {
+      const newArr = [...prev];
+      if (newArr[index]) {
+        newArr[index] = { 
+          ...newArr[index], 
+          isSaved: !newArr[index].isSaved 
+        };
+      }
+      return newArr;
+    });
+  };
+
   // --- Render ---
   
   // Render Notes Organizer Page
   if (currentPage === 'notes-organizer') {
     return (
-      <NotesOrganizerPage 
-        settings={settings}
-        onBack={() => setCurrentPage('lecture')}
-      />
+      <ToastContainer>
+        <NotesOrganizerPage 
+          settings={settings}
+          onBack={() => setCurrentPage('lecture')}
+        />
+      </ToastContainer>
     );
   }
   
   // Main Lecture Page
   return (
+    <ToastContainer>
     <div className="flex flex-col h-screen bg-gray-100 text-gray-900 font-sans overflow-hidden">
       <SettingsModal 
         isOpen={showSettings} 
@@ -828,6 +975,86 @@ const App: React.FC = () => {
            >
              <NotebookPen size={18} className="mr-1.5" />
              <span className="hidden sm:inline">笔记整理</span>
+           </Button>
+           
+           {/* Exam to Document Button */}
+           <Button 
+             variant="ghost" 
+             size="sm" 
+             onClick={() => setShowExamToDoc(!showExamToDoc)} 
+             title="试卷转文档"
+             className={showExamToDoc 
+               ? "bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-700" 
+               : "bg-gradient-to-r from-teal-50 to-cyan-50 text-teal-600 hover:from-teal-100 hover:to-cyan-100"
+             }
+           >
+             <ScanText size={18} className="mr-1.5" />
+             <span className="hidden sm:inline">试卷转文档</span>
+           </Button>
+           
+           {/* 智能闪卡按钮 */}
+           <Button 
+             variant="ghost" 
+             size="sm" 
+             onClick={() => { setShowFlashcards(!showFlashcards); setShowMindMap(false); setShowKnowledge(false); setShowFormula(false); }} 
+             title="智能闪卡"
+             className={showFlashcards 
+               ? "bg-gradient-to-r from-violet-100 to-purple-100 text-violet-700" 
+               : "bg-gradient-to-r from-violet-50 to-purple-50 text-violet-600 hover:from-violet-100 hover:to-purple-100"
+             }
+           >
+             <Layers size={18} className="mr-1.5" />
+             <span className="hidden sm:inline">闪卡</span>
+           </Button>
+           
+           {/* 思维导图按钮 */}
+           <Button 
+             variant="ghost" 
+             size="sm" 
+             onClick={() => { setShowMindMap(!showMindMap); setShowFlashcards(false); setShowKnowledge(false); setShowFormula(false); }} 
+             title="思维导图"
+             className={showMindMap 
+               ? "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700" 
+               : "bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-600 hover:from-emerald-100 hover:to-teal-100"
+             }
+           >
+             <GitBranch size={18} className="mr-1.5" />
+             <span className="hidden sm:inline">导图</span>
+           </Button>
+           
+           {/* 知识库按钮 - 显示知识数量 */}
+           <Button 
+             variant="ghost" 
+             size="sm" 
+             onClick={() => { setShowKnowledge(!showKnowledge); setShowFlashcards(false); setShowMindMap(false); setShowFormula(false); }} 
+             title={`知识库 (${knowledgeStats.totalConcepts} 概念, ${knowledgeStats.totalFormulas} 公式) - AI 会调用已学知识优化回答`}
+             className={`relative ${showKnowledge 
+               ? "bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700" 
+               : "bg-gradient-to-r from-amber-50 to-orange-50 text-amber-600 hover:from-amber-100 hover:to-orange-100"
+             }`}
+           >
+             <Database size={18} className="mr-1.5" />
+             <span className="hidden sm:inline">知识库</span>
+             {(knowledgeStats.totalConcepts + knowledgeStats.totalFormulas) > 0 && (
+               <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                 {knowledgeStats.totalConcepts + knowledgeStats.totalFormulas > 99 ? '99+' : knowledgeStats.totalConcepts + knowledgeStats.totalFormulas}
+               </span>
+             )}
+           </Button>
+           
+           {/* 公式讲解按钮 */}
+           <Button 
+             variant="ghost" 
+             size="sm" 
+             onClick={() => { setShowFormula(!showFormula); setShowFlashcards(false); setShowMindMap(false); setShowKnowledge(false); }} 
+             title="公式讲解"
+             className={showFormula 
+               ? "bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-700" 
+               : "bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-600 hover:from-indigo-100 hover:to-blue-100"
+             }
+           >
+             <Calculator size={18} className="mr-1.5" />
+             <span className="hidden sm:inline">公式</span>
            </Button>
            
            <div className="h-6 w-px bg-gray-200 mx-1"></div>
@@ -932,6 +1159,16 @@ const App: React.FC = () => {
              </div>
              
              <span className="text-slate-500 text-xs hidden sm:inline">of {lectureState.totalPages} pages</span>
+             
+             {/* 知识库增强指示器 */}
+             {(knowledgeStats.totalConcepts + knowledgeStats.totalFormulas) > 0 && (
+               <div className="hidden lg:flex items-center gap-1.5 px-2 py-1 bg-amber-500/20 rounded-lg" title="AI 正在使用您的知识库优化回答">
+                 <div className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse" />
+                 <span className="text-[10px] text-amber-300 font-medium">
+                   知识增强 ({knowledgeStats.totalConcepts + knowledgeStats.totalFormulas})
+                 </span>
+               </div>
+             )}
            </div>
            
            <div className="flex items-center space-x-2 flex-shrink-0">
@@ -1058,7 +1295,25 @@ const App: React.FC = () => {
       )}
 
       {/* Main Content */}
-      <main ref={containerRef} className="flex-1 flex overflow-hidden relative">
+      <main 
+        ref={containerRef} 
+        className="flex-1 flex overflow-hidden relative"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {/* 拖拽上传指示层 */}
+        {isDragging && (
+          <div className="absolute inset-0 z-50 bg-indigo-600/90 flex items-center justify-center pointer-events-none">
+            <div className="text-center text-white">
+              <div className="w-24 h-24 mx-auto mb-4 border-4 border-dashed border-white/50 rounded-2xl flex items-center justify-center">
+                <Upload size={48} className="animate-bounce" />
+              </div>
+              <p className="text-2xl font-bold">释放以上传 PDF</p>
+              <p className="text-white/70 mt-2">支持拖拽上传课件文件</p>
+            </div>
+          </div>
+        )}
         
         {/* Inline Files Panel - Left Side */}
         <InlineFilesPanel
@@ -1210,7 +1465,8 @@ const App: React.FC = () => {
           <LecturePanel 
             messages={messages} 
             isStreaming={isGenerating} 
-            onTranslate={handleTranslate} 
+            onTranslate={handleTranslate}
+            onSaveMessage={handleSaveMessage}
           />
 
           {/* Input */}
@@ -1335,8 +1591,62 @@ const App: React.FC = () => {
           gradingResult={gradingResult}
           isGrading={isGrading}
         />
+        
+        {/* Exam to Document Panel - Right Side */}
+        <ExamToDocPanel
+          isOpen={showExamToDoc}
+          onToggle={() => setShowExamToDoc(!showExamToDoc)}
+          settings={settings}
+        />
+        
+        {/* 智能闪卡面板 */}
+        <FlashcardsPanel
+          isOpen={showFlashcards}
+          onToggle={() => setShowFlashcards(!showFlashcards)}
+          settings={settings}
+          currentContent={getCurrentLectureContent()}
+          currentFileId={currentFileId || undefined}
+          currentFileName={lectureState.file?.name}
+        />
+        
+        {/* 思维导图面板 */}
+        <MindMapPanel
+          isOpen={showMindMap}
+          onToggle={() => setShowMindMap(!showMindMap)}
+          settings={settings}
+          currentContent={getCurrentLectureContent()}
+          currentFileId={currentFileId || undefined}
+          currentFileName={lectureState.file?.name}
+          currentPageRange={lectureState.currentBatch}
+        />
+        
+        {/* 知识库面板 */}
+        <KnowledgeBasePanel
+          isOpen={showKnowledge}
+          onToggle={() => setShowKnowledge(!showKnowledge)}
+          settings={settings}
+          currentContent={getCurrentLectureContent()}
+          currentFileId={currentFileId || undefined}
+          currentFileName={lectureState.file?.name}
+          currentPageNumber={lectureState.currentBatch[0]}
+          pageImages={getBatchImages(lectureState.currentBatch[0], lectureState.currentBatch[1], lectureState.parsedPages)}
+          currentPageRange={lectureState.currentBatch}
+        />
+        
+        {/* 公式讲解面板 */}
+        <FormulaExplainerPanel
+          isOpen={showFormula}
+          onToggle={() => setShowFormula(!showFormula)}
+          settings={settings}
+          currentContent={getCurrentLectureContent()}
+          currentFileId={currentFileId || undefined}
+          currentFileName={lectureState.file?.name}
+          pageImages={getBatchImages(lectureState.currentBatch[0], lectureState.currentBatch[1], lectureState.parsedPages)}
+          currentPageRange={lectureState.currentBatch}
+        />
       </main>
     </div>
+    </ToastContainer>
   );
 };
 
