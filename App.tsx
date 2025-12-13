@@ -202,11 +202,29 @@ const App: React.FC = () => {
     };
   }, [showHeaderMoreMenu]);
 
-  // Deep Pro theme: force Tailwind dark mode (class-based)
+  // Theme control: apply based on settings
   useEffect(() => {
-    document.documentElement.classList.add('dark');
-    return () => document.documentElement.classList.remove('dark');
-  }, []);
+    const applyTheme = (isDark: boolean) => {
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
+
+    if (settings.theme === 'system') {
+      // Follow system preference
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      applyTheme(mediaQuery.matches);
+      
+      const handler = (e: MediaQueryListEvent) => applyTheme(e.matches);
+      mediaQuery.addEventListener('change', handler);
+      return () => mediaQuery.removeEventListener('change', handler);
+    } else {
+      // Manual theme setting
+      applyTheme(settings.theme === 'dark');
+    }
+  }, [settings.theme]);
   
   useEffect(() => {
     if (lectureState.currentBatch[0] > 0) {

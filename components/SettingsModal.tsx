@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { AppSettings, DEFAULT_SETTINGS, APIProvider, TeachingStyle } from '../types';
+import { AppSettings, DEFAULT_SETTINGS, APIProvider, TeachingStyle, ThemeMode } from '../types';
 import { PRESET_MODELS, PRESET_URLS, TEACHING_STYLES } from '../constants';
 import { Button } from './Button';
 import { validateConnection } from '../services/aiService';
-import { Settings, Check, AlertCircle, X, Key, Link2, Sparkles, MessageCircle } from 'lucide-react';
+import { Settings, Check, AlertCircle, X, Key, Link2, Sparkles, MessageCircle, Sun, Moon, Monitor } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -250,6 +250,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, c
               <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
                 这些指令会添加到每次 AI 回答中
               </p>
+            </div>
+          </div>
+
+          {/* Theme Settings */}
+          <div className="pt-4 border-t border-gray-200 dark:border-white/10">
+            <div className="flex items-center gap-2 mb-4">
+              <Moon size={18} className="text-indigo-500" />
+              <h3 className="font-medium text-gray-800 dark:text-slate-100">主题设置</h3>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { value: 'light' as ThemeMode, icon: Sun, label: '浅色', desc: '明亮模式' },
+                { value: 'dark' as ThemeMode, icon: Moon, label: '深色', desc: '暗黑模式' },
+                { value: 'system' as ThemeMode, icon: Monitor, label: '跟随系统', desc: '自动切换' },
+              ].map(({ value, icon: Icon, label, desc }) => (
+                <button
+                  key={value}
+                  onClick={() => setSettings({ ...settings, theme: value })}
+                  className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
+                    settings.theme === value
+                      ? 'bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm dark:bg-indigo-500/15 dark:border-indigo-400/30 dark:text-indigo-200'
+                      : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 dark:bg-white/5 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10'
+                  }`}
+                >
+                  <Icon size={20} className={settings.theme === value ? 'text-indigo-500 dark:text-indigo-300' : ''} />
+                  <span className="text-sm font-medium">{label}</span>
+                  <span className="text-[10px] opacity-60">{desc}</span>
+                </button>
+              ))}
             </div>
           </div>
 

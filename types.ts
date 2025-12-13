@@ -34,6 +34,9 @@ export type APIProvider = 'gemini' | 'openai' | 'claude' | 'deepseek' | 'ollama'
 // 教学风格类型
 export type TeachingStyle = 'balanced' | 'concise' | 'detailed' | 'examples' | 'socratic';
 
+// 主题类型
+export type ThemeMode = 'light' | 'dark' | 'system';
+
 export interface AppSettings {
   provider: APIProvider;
   apiKey: string;
@@ -46,6 +49,8 @@ export interface AppSettings {
   customPrompt: string;
   enableContext: boolean; // 是否启用多轮对话上下文
   contextTurns: number; // 保留多少轮对话上下文
+  // 主题设置
+  theme: ThemeMode;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -58,7 +63,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   teachingStyle: 'balanced',
   customPrompt: '',
   enableContext: true,
-  contextTurns: 5
+  contextTurns: 5,
+  // 主题默认值
+  theme: 'dark'
 };
 
 // 文件记录
