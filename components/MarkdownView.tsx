@@ -74,15 +74,19 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({ content, className, 
     } as NonNullable<MarkdownViewProps['components']>;
   }, [inline, components]);
 
+  // react-markdown v9+ removed className prop, wrap in a container instead
+  const Wrapper = inline ? 'span' : 'div';
+  
   return (
-    <ReactMarkdown
-      className={className}
-      remarkPlugins={remarkPlugins}
-      rehypePlugins={rehypePlugins as any}
-      components={finalComponents}
-    >
-      {preprocessMarkdown(content)}
-    </ReactMarkdown>
+    <Wrapper className={className}>
+      <ReactMarkdown
+        remarkPlugins={remarkPlugins}
+        rehypePlugins={rehypePlugins as any}
+        components={finalComponents}
+      >
+        {preprocessMarkdown(content)}
+      </ReactMarkdown>
+    </Wrapper>
   );
 };
 
