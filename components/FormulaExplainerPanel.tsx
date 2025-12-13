@@ -5,7 +5,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { 
   Calculator, Plus, Sparkles, X, Search, Trash2, Edit3, Copy,
-  ChevronDown, ChevronRight, BookOpen, Zap, Filter, Download,
+  ChevronDown, ChevronRight, ChevronLeft, BookOpen, Zap, Filter, Download,
   ArrowRight, HelpCircle, Sigma, Pi, Percent, TrendingUp
 } from 'lucide-react';
 import { Formula, FormulaVariable, AppSettings } from '../types';
@@ -13,7 +13,7 @@ import {
   getFormulas, saveFormula, saveFormulas, deleteFormula, 
   searchFormulas, getFormulaStats 
 } from '../services/storageService';
-import { generateStream } from '../services/aiService';
+import { generateStream, stopGeneration } from '../services/aiService';
 import { PROMPTS } from '../constants';
 import { Button } from './Button';
 import { useToast } from './Toast';
@@ -87,6 +87,21 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [explanation, setExplanation] = useState('');
+
+  // 页面栈：支持“返回上一页”，避免进入讲解页后无法返回
+  type ViewSnapshot = {
+    viewMode: ViewMode;
+    selectedFormula: Formula | null;
+    inputLatex: string;
+    inputName: string;
+    inputCategory: string;
+    inputDifficulty: string;
+    inputTags: string;
+    explanation: string;
+    searchQuery: string;
+    filterCategory: string | null;
+  };
+  const [viewStack, setViewStack] = useState<ViewSnapshot[]>([]);
   
   // 表单状态
   const [inputLatex, setInputLatex] = useState('');
@@ -117,6 +132,74 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
     }
   }, [isOpen]);
 
+  // 面板关闭时清理“生成中”状态与页面栈，避免下次打开卡在某一页
+  useEffect(() => {
+    if (!isOpen) {
+      if (isGenerating) stopGeneration();
+      setIsGenerating(false);
+      setExplanation('');
+      setSelectedFormula(null);
+      setViewMode('list');
+      setViewStack([]);
+    }
+  }, [isOpen, isGenerating]);
+
+  const pushSnapshot = useCallback(() => {
+    setViewStack(prev => [
+      ...prev,
+      {
+        viewMode,
+        selectedFormula,
+        inputLatex,
+        inputName,
+        inputCategory,
+        inputDifficulty,
+        inputTags,
+        explanation,
+        searchQuery,
+        filterCategory,
+      }
+    ]);
+  }, [
+    viewMode,
+    selectedFormula,
+    inputLatex,
+    inputName,
+    inputCategory,
+    inputDifficulty,
+    inputTags,
+    explanation,
+    searchQuery,
+    filterCategory,
+  ]);
+
+  const goBack = useCallback(() => {
+    // 返回时如果还在生成，先停止生成，避免“卡死在生成页”
+    if (isGenerating) {
+      stopGeneration();
+      setIsGenerating(false);
+    }
+
+    setViewStack(prev => {
+      if (prev.length === 0) {
+        setViewMode('list');
+        return prev;
+      }
+      const last = prev[prev.length - 1];
+      setViewMode(last.viewMode);
+      setSelectedFormula(last.selectedFormula);
+      setInputLatex(last.inputLatex);
+      setInputName(last.inputName);
+      setInputCategory(last.inputCategory);
+      setInputDifficulty(last.inputDifficulty);
+      setInputTags(last.inputTags);
+      setExplanation(last.explanation);
+      setSearchQuery(last.searchQuery);
+      setFilterCategory(last.filterCategory);
+      return prev.slice(0, -1);
+    });
+  }, [isGenerating]);
+
   // 统计数据
   const stats = useMemo(() => getFormulaStats(), [formulas]);
 
@@ -146,6 +229,7 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
       return;
     }
 
+    pushSnapshot();
     setIsGenerating(true);
     setExplanation('');
     setViewMode('explain');
@@ -179,6 +263,7 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
       return;
     }
 
+    pushSnapshot();
     setIsGenerating(true);
     setExplanation('');
     setViewMode('explain');
@@ -199,7 +284,7 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
     } finally {
       setIsGenerating(false);
     }
-  }, [settings, toast]);
+  }, [settings, toast, pushSnapshot]);
 
   // 从 PDF 页面图片提取公式（视觉识别）
   const handleExtractFormulasFromPDF = useCallback(async () => {
@@ -310,6 +395,16 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
     }
   }, [currentContent, settings, currentFileId, currentFileName, toast]);
 
+  // 重置表单（放在前面，供后续 useCallback 依赖引用）
+  const resetForm = useCallback(() => {
+    setInputLatex('');
+    setInputName('');
+    setInputCategory('math');
+    setInputDifficulty('intermediate');
+    setInputTags('');
+    setSelectedFormula(null);
+  }, []);
+
   // 保存公式
   const handleSaveFormula = useCallback(() => {
     if (!inputLatex.trim()) {
@@ -334,9 +429,11 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
     saveFormula(newFormula);
     setFormulas(getFormulas());
     resetForm();
+    // 保存后回到列表页（作为根页），同时清空页面栈，避免出现“还能返回”的错觉
     setViewMode('list');
+    setViewStack([]);
     toast.success('公式已保存');
-  }, [inputLatex, inputName, inputCategory, inputDifficulty, inputTags, selectedFormula, currentFileId, currentFileName, toast]);
+  }, [inputLatex, inputName, inputCategory, inputDifficulty, inputTags, selectedFormula, currentFileId, currentFileName, toast, resetForm]);
 
   // 删除公式
   const handleDeleteFormula = useCallback((id: string, e: React.MouseEvent) => {
@@ -356,30 +453,23 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
     }
   }, [copy, toast]);
 
-  // 重置表单
-  const resetForm = useCallback(() => {
-    setInputLatex('');
-    setInputName('');
-    setInputCategory('math');
-    setInputDifficulty('intermediate');
-    setInputTags('');
-    setSelectedFormula(null);
-  }, []);
-
   // 打开创建模式
   const openCreateMode = useCallback(() => {
+    pushSnapshot();
     resetForm();
     setViewMode('create');
-  }, [resetForm]);
+  }, [resetForm, pushSnapshot]);
 
   // 打开详情模式
   const openDetail = useCallback((formula: Formula) => {
+    pushSnapshot();
     setSelectedFormula(formula);
     setViewMode('detail');
-  }, []);
+  }, [pushSnapshot]);
 
   // 编辑公式
   const openEditMode = useCallback((formula: Formula) => {
+    pushSnapshot();
     setSelectedFormula(formula);
     setInputLatex(formula.latex);
     setInputName(formula.name || '');
@@ -387,7 +477,7 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
     setInputDifficulty(formula.difficulty || 'intermediate');
     setInputTags(formula.tags.join(', '));
     setViewMode('create');
-  }, []);
+  }, [pushSnapshot]);
 
   // 快速讲解
   const quickExplain = useCallback((formula: Formula) => {
@@ -404,6 +494,15 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
       <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-indigo-600 to-blue-600">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-white">
+            {viewStack.length > 0 && (
+              <button
+                onClick={goBack}
+                className="p-1 rounded-md hover:bg-white/10 transition-colors"
+                title={isGenerating ? "停止并返回" : "返回"}
+              >
+                <ChevronLeft size={18} />
+              </button>
+            )}
             <Calculator size={20} />
             <h2 className="font-bold">公式讲解</h2>
           </div>
@@ -605,7 +704,11 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
               <h3 className="font-medium text-gray-800">
                 {selectedFormula ? '编辑公式' : '添加公式'}
               </h3>
-              <button onClick={() => { resetForm(); setViewMode('list'); }} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => { resetForm(); goBack(); }}
+                className="text-gray-400 hover:text-gray-600"
+                title="返回"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -706,7 +809,11 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-medium text-gray-800">公式讲解</h3>
-              <button onClick={() => setViewMode('list')} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={goBack}
+                className="text-gray-400 hover:text-gray-600"
+                title={isGenerating ? "停止并返回" : "返回"}
+              >
                 <X size={20} />
               </button>
             </div>
@@ -766,7 +873,11 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-medium text-gray-800">{selectedFormula.name || '公式详情'}</h3>
-              <button onClick={() => setViewMode('list')} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={goBack}
+                className="text-gray-400 hover:text-gray-600"
+                title="返回"
+              >
                 <X size={20} />
               </button>
             </div>
