@@ -7,6 +7,8 @@
     <!-- Tailwind CSS with dark mode config -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+      // Ensure tailwind global exists before setting config to prevent ReferenceError
+      window.tailwind = window.tailwind || {};
       // Configure Tailwind for class-based dark mode AFTER CDN loads
       tailwind.config = {
         darkMode: 'class',
