@@ -1067,6 +1067,47 @@ const App: React.FC = () => {
       </button>
     );
   };
+
+  const BrandMark = ({ className }: { className?: string }) => (
+    <svg
+      className={className}
+      viewBox="0 0 64 64"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path
+        d="M32 4C16.536 4 4 16.536 4 32s12.536 28 28 28 28-12.536 28-28S47.464 4 32 4Z"
+        stroke="currentColor"
+        strokeOpacity="0.22"
+        strokeWidth="2"
+      />
+      <defs>
+        <linearGradient id="brand_g" x1="12" y1="12" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#6366F1" />
+          <stop offset="0.55" stopColor="#A855F7" />
+          <stop offset="1" stopColor="#38BDF8" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M32 12c11.046 0 20 8.954 20 20s-8.954 20-20 20-20-8.954-20-20 8.954-20 20-20Z"
+        fill="url(#brand_g)"
+        fillOpacity="0.95"
+      />
+      <path
+        d="M32 21.5l9.5 21h-4.2l-2.1-4.9H28.8l-2.1 4.9h-4.2l9.5-21Zm1.7 12.7-2.8-6.7-2.8 6.7h5.6Z"
+        fill="white"
+        fillOpacity="0.96"
+      />
+      <path
+        d="M20 24c3-5 8-8 14-8"
+        stroke="white"
+        strokeOpacity="0.35"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
   
   // Main Lecture Page
   return (
@@ -1082,12 +1123,12 @@ const App: React.FC = () => {
       {/* Header */}
       <header className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border-b border-gray-200/60 dark:border-white/10 px-6 py-3 flex items-center justify-between shadow-sm dark:shadow-black/30 z-20">
         <div className="flex items-center gap-3">
-          <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-sm shadow-indigo-500/20">
-            <GraduationCap size={24} />
+          <div className="p-1.5 rounded-2xl text-white shadow-sm shadow-indigo-500/20 bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10 backdrop-blur-md">
+            <BrandMark className="w-10 h-10 text-white" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-800 dark:text-slate-100 leading-none">AI Professor</h1>
-            <span className="text-xs text-gray-500 dark:text-slate-400 font-medium">Web Edition v3.0</span>
+            <span className="text-xs text-gray-500 dark:text-slate-400 font-medium">Pro • Deep Dark</span>
           </div>
         </div>
 
