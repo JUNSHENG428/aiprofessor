@@ -202,8 +202,10 @@ const App: React.FC = () => {
     };
   }, [showHeaderMoreMenu]);
 
-  // Theme control: apply based on settings
+  // Theme control: apply based on settings (default to dark if theme not set)
   useEffect(() => {
+    const theme = settings.theme || 'dark'; // Default to dark if not set
+    
     const applyTheme = (isDark: boolean) => {
       if (isDark) {
         document.documentElement.classList.add('dark');
@@ -212,7 +214,7 @@ const App: React.FC = () => {
       }
     };
 
-    if (settings.theme === 'system') {
+    if (theme === 'system') {
       // Follow system preference
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       applyTheme(mediaQuery.matches);
@@ -222,7 +224,7 @@ const App: React.FC = () => {
       return () => mediaQuery.removeEventListener('change', handler);
     } else {
       // Manual theme setting
-      applyTheme(settings.theme === 'dark');
+      applyTheme(theme === 'dark');
     }
   }, [settings.theme]);
   

@@ -4,14 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Professor</title>
-    <!-- Tailwind CSS -->
-    <script>
-      // Deep Pro theme: use class-based dark mode so we can force it from React
-      // Ensure tailwind global exists before setting config to prevent ReferenceError
-      tailwind = window.tailwind || {};
-      tailwind.config = { darkMode: 'class' };
-    </script>
+    <!-- Tailwind CSS with dark mode config -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // Configure Tailwind for class-based dark mode AFTER CDN loads
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              // Deep Pro dark theme colors
+              'deep-bg': '#0a0a0f',
+              'deep-card': '#12121a',
+              'deep-border': 'rgba(255,255,255,0.08)',
+            }
+          }
+        }
+      };
+    </script>
     
     <!-- PDF.js for parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>

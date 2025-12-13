@@ -60,7 +60,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, c
           </button>
         </div>
 
-        <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto bg-white dark:bg-slate-900">
           {/* Provider Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-2">AI Provider</label>
@@ -111,12 +111,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, c
 
           {/* Model */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Model</label>
             {PRESET_MODELS[settings.provider]?.length > 0 ? (
               <select
                 value={settings.model}
                 onChange={(e) => setSettings({ ...settings, model: e.target.value })}
-                className="block w-full rounded-lg border-gray-300 border py-2.5 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="block w-full rounded-xl border-gray-300 dark:border-white/10 border py-2.5 px-3 text-sm bg-white dark:bg-white/5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/60 dark:focus:ring-indigo-400/30 outline-none"
               >
                 {PRESET_MODELS[settings.provider].map(m => (
                   <option key={m} value={m}>{m}</option>
@@ -127,7 +127,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, c
                 type="text"
                 value={settings.model}
                 onChange={(e) => setSettings({ ...settings, model: e.target.value })}
-                className="block w-full rounded-lg border-gray-300 border py-2.5 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="block w-full rounded-xl border-gray-300 dark:border-white/10 border py-2.5 px-3 text-sm bg-white dark:bg-white/5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/60 dark:focus:ring-indigo-400/30 outline-none"
                 placeholder="e.g. gpt-4o"
               />
             )}
@@ -136,16 +136,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, c
           {/* Base URL (Optional) */}
           {(settings.provider === 'custom' || settings.provider === 'openai' || settings.provider === 'deepseek') && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Base URL</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Base URL</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Link2 size={16} className="text-gray-400" />
+                  <Link2 size={16} className="text-gray-400 dark:text-slate-400" />
                 </div>
                 <input
                   type="text"
                   value={settings.baseUrl}
                   onChange={(e) => setSettings({ ...settings, baseUrl: e.target.value })}
-                  className="pl-10 block w-full rounded-lg border-gray-300 border py-2.5 px-3 text-sm font-mono text-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="pl-10 block w-full rounded-xl border-gray-300 dark:border-white/10 border py-2.5 px-3 text-sm font-mono bg-white dark:bg-white/5 text-gray-600 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/60 dark:focus:ring-indigo-400/30 outline-none"
                   placeholder="https://api.openai.com/v1"
                 />
               </div>
@@ -154,8 +154,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, c
 
           {/* Batch Size */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Batch Size <span className="text-gray-400 font-normal">(pages per explanation)</span>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">
+              Batch Size <span className="text-gray-400 dark:text-slate-500 font-normal">(pages per explanation)</span>
             </label>
             <input
               type="number"
@@ -163,29 +163,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, c
               max={10}
               value={settings.batchSize}
               onChange={(e) => setSettings({ ...settings, batchSize: parseInt(e.target.value) || 1 })}
-              className="block w-full rounded-lg border-gray-300 border py-2.5 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full rounded-xl border-gray-300 dark:border-white/10 border py-2.5 px-3 text-sm bg-white dark:bg-white/5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/60 dark:focus:ring-indigo-400/30 outline-none"
             />
           </div>
 
           {/* AI Enhancement Section */}
-          <div className="pt-4 border-t border-gray-200">
+          <div className="pt-4 border-t border-gray-200 dark:border-white/10">
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles size={18} className="text-indigo-500" />
-              <h3 className="font-medium text-gray-800">AI 功能增强</h3>
+              <Sparkles size={18} className="text-indigo-500 dark:text-indigo-400" />
+              <h3 className="font-medium text-gray-800 dark:text-slate-100">AI 功能增强</h3>
             </div>
             
             {/* Teaching Style */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">教学风格</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-2">教学风格</label>
               <div className="grid grid-cols-2 gap-2">
                 {(Object.keys(TEACHING_STYLES) as TeachingStyle[]).map(style => (
                   <button
                     key={style}
                     onClick={() => setSettings({ ...settings, teachingStyle: style })}
-                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-all text-left ${
+                    className={`flex items-center gap-2 px-3 py-2 text-sm rounded-xl border transition-all text-left ${
                       settings.teachingStyle === style
-                        ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
-                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                        ? 'bg-indigo-50 border-indigo-500 text-indigo-700 dark:bg-indigo-500/15 dark:border-indigo-400/30 dark:text-indigo-200'
+                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-white/5 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10'
                     }`}
                   >
                     <span>{TEACHING_STYLES[style].icon}</span>
@@ -195,7 +195,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, c
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-xs text-gray-500">
+              <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">
                 {TEACHING_STYLES[settings.teachingStyle]?.description}
               </p>
             </div>
@@ -203,8 +203,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, c
             {/* Multi-turn Context */}
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <MessageCircle size={14} />
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-slate-200">
+                  <MessageCircle size={14} className="text-gray-500 dark:text-slate-400" />
                   多轮对话上下文
                 </label>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -214,7 +214,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, c
                     onChange={(e) => setSettings({ ...settings, enableContext: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                  <div className="w-9 h-5 bg-gray-200 dark:bg-slate-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
                 </label>
               </div>
               {settings.enableContext && (
