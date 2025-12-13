@@ -1,11 +1,21 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Search, X, ChevronUp, ChevronDown, Highlighter, MessageSquare, Eraser, Hand, Move } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Search, X, ChevronUp, ChevronDown, Highlighter, MessageSquare, Eraser, Hand, Crop } from 'lucide-react';
 
 interface PdfViewerProps {
   file: File;
   pageNumber: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+  /**
+   * 框选区域回调：返回裁剪后的图片（只包含框内内容）
+   * 这用于“只解析框选区域”，提升精度并减少 token。
+   */
+  onRegionExtract?: (payload: {
+    pageNumber: number;
+    rect: { x: number; y: number; width: number; height: number };
+    imageDataUrl: string;
+    pageText?: string;
+  }) => void;
 }
 
 // Annotation types
@@ -37,7 +47,7 @@ const HIGHLIGHT_COLORS = [
   { name: 'Orange', value: 'rgba(255, 152, 0, 0.4)' },
 ];
 
-export const PdfViewer: React.FC<PdfViewerProps> = ({ file, pageNumber, totalPages, onPageChange }) => {
+export const PdfViewer: React.FC<PdfViewerProps> = ({ file, pageNumber, totalPages, onPageChange, onRegionExtract }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const annotationCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -55,7 +65,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ file, pageNumber, totalPag
   
   // Annotation state
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [annotationMode, setAnnotationMode] = useState<'none' | 'highlight' | 'underline' | 'note'>('none');
+  const [annotationMode, setAnnotationMode] = useState<'none' | 'highlight' | 'underline' | 'note' | 'region'>('none');
   const [selectedColor, setSelectedColor] = useState(HIGHLIGHT_COLORS[0].value);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
@@ -226,14 +236,26 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ file, pageNumber, totalPag
     
     // Draw current selection
     if (isSelecting && selectionStart && selectionEnd) {
-      ctx.fillStyle = selectedColor;
       const x = Math.min(selectionStart.x, selectionEnd.x);
       const y = Math.min(selectionStart.y, selectionEnd.y);
       const width = Math.abs(selectionEnd.x - selectionStart.x);
       const height = Math.abs(selectionEnd.y - selectionStart.y);
-      ctx.fillRect(x, y, width, height);
+
+      if (annotationMode === 'region') {
+        // 框选解析：用边框+半透明填充，更像“截图框选”
+        ctx.fillStyle = 'rgba(99, 102, 241, 0.15)';
+        ctx.fillRect(x, y, width, height);
+        ctx.strokeStyle = 'rgba(99, 102, 241, 0.9)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.strokeRect(x + 1, y + 1, Math.max(0, width - 2), Math.max(0, height - 2));
+        ctx.setLineDash([]);
+      } else {
+        ctx.fillStyle = selectedColor;
+        ctx.fillRect(x, y, width, height);
+      }
     }
-  }, [annotations, pageNumber, isSelecting, selectionStart, selectionEnd, selectedColor]);
+  }, [annotations, pageNumber, isSelecting, selectionStart, selectionEnd, selectedColor, annotationMode]);
 
   // Re-render annotations when they change
   useEffect(() => {
@@ -390,6 +412,43 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ file, pageNumber, totalPag
     const height = Math.abs(selectionEnd.y - selectionStart.y);
     
     if (width > 5 && height > 5) {
+      // 框选解析：裁剪并回调，不写入标注
+      if (annotationMode === 'region') {
+        try {
+          const baseCanvas = canvasRef.current;
+          if (baseCanvas) {
+            const cropCanvas = document.createElement('canvas');
+            cropCanvas.width = Math.round(width);
+            cropCanvas.height = Math.round(height);
+            const cropCtx = cropCanvas.getContext('2d');
+            if (cropCtx) {
+              // 白底（避免透明背景影响识别）
+              cropCtx.fillStyle = '#ffffff';
+              cropCtx.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
+              cropCtx.drawImage(
+                baseCanvas,
+                x,
+                y,
+                width,
+                height,
+                0,
+                0,
+                cropCanvas.width,
+                cropCanvas.height
+              );
+              const imageDataUrl = cropCanvas.toDataURL('image/png', 0.98);
+              onRegionExtract?.({
+                pageNumber,
+                rect: { x, y, width, height },
+                imageDataUrl,
+                pageText,
+              });
+            }
+          }
+        } catch (err) {
+          console.error('Region crop failed', err);
+        }
+      } else {
       const newAnnotation: Annotation = {
         id: Date.now().toString(),
         pageNumber,
@@ -401,6 +460,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ file, pageNumber, totalPag
         height
       };
       saveAnnotations([...annotations, newAnnotation]);
+      }
     }
     
     setIsSelecting(false);
@@ -547,6 +607,23 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ file, pageNumber, totalPag
             title="添加注释"
           >
             <MessageSquare size={16} />
+          </button>
+
+          {/* Region Extract (AI) */}
+          <button
+            onClick={() => {
+              // 切换到框选解析时，避免与拖动模式冲突
+              setAnnotationMode(prev => (prev === 'region' ? 'none' : 'region'));
+              setIsPanMode(false);
+            }}
+            className={`p-1.5 rounded-md transition-colors ${
+              annotationMode === 'region'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+            }`}
+            title="框选解析（只分析框内内容）"
+          >
+            <Crop size={16} />
           </button>
           
           {/* Color Picker */}
@@ -754,6 +831,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ file, pageNumber, totalPag
             {annotationMode === 'highlight' && '🖍️ 高亮模式：拖动选择区域'}
             {annotationMode === 'underline' && '📏 下划线模式：拖动选择区域'}
             {annotationMode === 'note' && '📝 注释模式：点击添加注释'}
+            {annotationMode === 'region' && '🎯 框选解析：拖动框选区域（只分析框内内容）'}
           </span>
           <button
             onClick={() => setAnnotationMode('none')}

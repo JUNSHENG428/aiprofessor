@@ -6,7 +6,7 @@ import {
   ChevronDown, ChevronRight, ChevronLeft, BookOpen, Zap, Filter, Download,
   ArrowRight, HelpCircle, Sigma, Pi, Percent, TrendingUp
 } from 'lucide-react';
-import { Formula, FormulaVariable, AppSettings } from '../types';
+import { Formula, FormulaVariable, AppSettings, ParsedPage } from '../types';
 import { 
   getFormulas, saveFormula, saveFormulas, deleteFormula, 
   searchFormulas, getFormulaStats 
@@ -28,6 +28,8 @@ interface FormulaExplainerPanelProps {
   // PDF 页面图片（用于视觉识别公式）
   pageImages?: string[];
   currentPageRange?: [number, number];
+  // 全部页面（用于跨页补全）
+  allPages?: ParsedPage[];
 }
 
 type ViewMode = 'list' | 'explain' | 'create' | 'detail';
@@ -79,7 +81,8 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
   currentFileId,
   currentFileName,
   pageImages,
-  currentPageRange
+  currentPageRange,
+  allPages
 }) => {
   const [formulas, setFormulas] = useState<Formula[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -275,6 +278,81 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
       setIsGenerating(false);
     }
   }, [settings, toast, pushSnapshot]);
+
+  // 跨页补全：把同一公式在不同页的定义/变量表/推导串起来
+  const handleCrossPageExplain = useCallback(async (queryLatexOrName: string) => {
+    if (!queryLatexOrName.trim()) {
+      toast.warning('请先选择或输入要补全的公式');
+      return;
+    }
+    if (!allPages || allPages.length === 0) {
+      toast.warning('当前没有可用的全量页面数据（请先上传并解析 PDF）');
+      return;
+    }
+    if (!settings.apiKey && settings.provider !== 'ollama') {
+      toast.warning('请先配置 API Key');
+      return;
+    }
+
+    // 轻量关键词：优先用名称；否则从 latex 提取字母 token
+    const tokens = new Set<string>();
+    const name = selectedFormula?.name?.trim();
+    if (name) {
+      name.split(/\s+/).forEach(t => t.length >= 2 && tokens.add(t.toLowerCase()));
+    }
+    const latexTokens = (queryLatexOrName.match(/[a-zA-Z]{2,}/g) || []).slice(0, 10);
+    latexTokens.forEach(t => tokens.add(t.toLowerCase()));
+
+    const scored = allPages.map(p => {
+      const hay = (p.text || '').toLowerCase();
+      let score = 0;
+      tokens.forEach(t => {
+        if (hay.includes(t)) score += 1;
+      });
+      // 也尝试直接匹配原串（弱匹配）
+      if (queryLatexOrName.length >= 4 && hay.includes(queryLatexOrName.toLowerCase().slice(0, 12))) score += 1;
+      return { page: p.pageNumber, score, text: p.text || '', image: p.image };
+    }).filter(x => x.score > 0);
+
+    // 至少包含当前批次范围（如果存在）
+    const basePages = new Set<number>();
+    if (currentPageRange) {
+      for (let i = currentPageRange[0]; i <= currentPageRange[1]; i++) basePages.add(i);
+    }
+    scored.sort((a, b) => b.score - a.score);
+    scored.slice(0, 6).forEach(s => basePages.add(s.page));
+
+    const pageNums = Array.from(basePages).sort((a, b) => a - b).slice(0, 6);
+    const picked = pageNums
+      .map(n => allPages.find(p => p.pageNumber === n))
+      .filter(Boolean) as ParsedPage[];
+
+    const images = picked.map(p => p.image).filter(Boolean) as string[];
+    const snippets = picked.map(p => {
+      const txt = (p.text || '').replace(/\s+/g, ' ').trim();
+      return `- Page ${p.pageNumber}: ${txt.substring(0, 500)}${txt.length > 500 ? '...' : ''}`;
+    }).join('\n');
+
+    pushSnapshot();
+    setIsGenerating(true);
+    setExplanation('');
+    setViewMode('explain');
+
+    try {
+      const prompt = PROMPTS.EXPLAIN_FORMULA_CROSSPAGES(queryLatexOrName, snippets);
+      let full = '';
+      await generateStream(settings, prompt, images, (chunk) => {
+        full += chunk;
+        setExplanation(full);
+      });
+      toast.success('跨页补全完成！');
+    } catch (e) {
+      console.error('跨页补全失败:', e);
+      toast.error('跨页补全失败，请重试');
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [allPages, settings, toast, selectedFormula?.name, currentPageRange, pushSnapshot]);
 
   // 从 PDF 页面图片提取公式（视觉识别）
   const handleExtractFormulasFromPDF = useCallback(async () => {
@@ -808,6 +886,23 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
               </button>
             </div>
 
+            {/* 跨页补全 */}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleCrossPageExplain(inputLatex || selectedFormula?.name || selectedFormula?.latex || '')}
+                disabled={isGenerating || !allPages || allPages.length === 0}
+                title={!allPages || allPages.length === 0 ? '需要全量页面数据（请先上传并解析 PDF）' : '跨页补全同一公式的定义/变量/推导'}
+              >
+                <ArrowRight size={14} className="mr-1" />
+                跨页补全
+              </Button>
+              <span className="text-xs text-gray-500 self-center">
+                会自动搜索相关页并合并讲解
+              </span>
+            </div>
+
             {/* 公式展示 */}
             <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl border border-indigo-100">
               <LatexRenderer latex={inputLatex || selectedFormula?.latex || ''} />
@@ -866,6 +961,19 @@ export const FormulaExplainerPanel: React.FC<FormulaExplainerPanelProps> = ({
                 <X size={20} />
               </button>
             </div>
+
+            {/* 跨页补全入口 */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleCrossPageExplain(selectedFormula.name || selectedFormula.latex)}
+              disabled={isGenerating || !allPages || allPages.length === 0}
+              title={!allPages || allPages.length === 0 ? '需要全量页面数据（请先上传并解析 PDF）' : '跨页补全同一公式的定义/变量/推导'}
+              className="w-full justify-center"
+            >
+              <ArrowRight size={14} className="mr-1" />
+              跨页补全这条公式的讲解
+            </Button>
 
             {/* 公式展示 */}
             <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl border border-indigo-100">

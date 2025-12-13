@@ -84,6 +84,10 @@ const App: React.FC = () => {
   
   // Image upload state for chat
   const [chatImages, setChatImages] = useState<string[]>([]);
+  const [lastPdfRegion, setLastPdfRegion] = useState<{
+    pageNumber: number;
+    imageDataUrl: string;
+  } | null>(null);
   
   // AI enhancement state
   const [showStylePicker, setShowStylePicker] = useState(false);
@@ -719,6 +723,28 @@ const App: React.FC = () => {
 
     setIsGenerating(false);
   };
+
+  // 框选区域：把“裁剪后的局部图”塞进聊天图片队列，让 AI 只解析框内内容
+  const handlePdfRegionExtract = useCallback((payload: {
+    pageNumber: number;
+    rect: { x: number; y: number; width: number; height: number };
+    imageDataUrl: string;
+    pageText?: string;
+  }) => {
+    setLastPdfRegion({ pageNumber: payload.pageNumber, imageDataUrl: payload.imageDataUrl });
+    setChatImages(prev => [...prev, payload.imageDataUrl]);
+
+    // 只做“提示+预填”，不自动发送，避免打断用户
+    setUserInput(prev => {
+      const hint =
+        `请只分析我框选的区域（来自第 ${payload.pageNumber} 页）：\n` +
+        `1) 如果是公式：给出准确 LaTeX（用 $...$ 或 $$...$$），并解释变量含义。\n` +
+        `2) 如果是表格：输出规范的 Markdown 表格并总结关键结论。\n` +
+        `3) 如果是图表：说明坐标轴/图例/趋势/结论。\n` +
+        `4) 最后给我“考试/复习重点”要点。\n`;
+      return prev.trim() ? `${prev}\n\n${hint}` : hint;
+    });
+  }, []);
   
   // Regenerate the last response
   const handleRegenerate = async () => {
@@ -1363,6 +1389,7 @@ const App: React.FC = () => {
                   pageNumber={viewPage}
                   totalPages={lectureState.parsedPages.length}
                   onPageChange={(page) => setViewPage(page)}
+                  onRegionExtract={handlePdfRegionExtract}
                 />
               </div>
             </div>
@@ -1643,6 +1670,7 @@ const App: React.FC = () => {
           currentFileName={lectureState.file?.name}
           pageImages={getBatchImages(lectureState.currentBatch[0], lectureState.currentBatch[1], lectureState.parsedPages)}
           currentPageRange={lectureState.currentBatch}
+          allPages={lectureState.parsedPages}
         />
       </main>
     </div>
