@@ -18,6 +18,7 @@ import { FormulaExplainerPanel } from './components/FormulaExplainerPanel';
 import { ToastContainer } from './components/Toast';
 import { parsePDF } from './services/pdfService';
 import { generateStream, stopGeneration } from './services/aiService';
+import { ocrRegionStructured } from './services/ocrService';
 import { 
   saveSession, 
   saveFileRecord, 
@@ -26,7 +27,9 @@ import {
   clearAutoSave,
   getStorageStats,
   getAugmentedContext,
-  getKnowledgeStats
+  getKnowledgeStats,
+  saveFormulas,
+  saveKnowledgeConcept
 } from './services/storageService';
 import { ParsedPage, LectureState, Message, LectureMode, AppSettings, DEFAULT_SETTINGS, FileRecord, Session, Note, TeachingStyle } from './types';
 import { PROMPTS, TEACHING_STYLES } from './constants';
@@ -88,6 +91,8 @@ const App: React.FC = () => {
     pageNumber: number;
     imageDataUrl: string;
   } | null>(null);
+  const [isOcrRunning, setIsOcrRunning] = useState(false);
+  const [ocrProgressText, setOcrProgressText] = useState('');
   
   // AI enhancement state
   const [showStylePicker, setShowStylePicker] = useState(false);
@@ -745,6 +750,91 @@ const App: React.FC = () => {
       return prev.trim() ? `${prev}\n\n${hint}` : hint;
     });
   }, []);
+
+  // 一键 OCR：框选后点击，把结构化结果插入聊天，并自动写入公式库/知识库
+  const handleOneClickOcr = useCallback(async () => {
+    if (!lastPdfRegion) return;
+    if (isOcrRunning || isGenerating) return;
+    if (!settings.apiKey && settings.provider !== 'ollama') {
+      setShowSettings(true);
+      return;
+    }
+
+    try {
+      setIsOcrRunning(true);
+      setOcrProgressText('');
+
+      const { parsed, raw } = await ocrRegionStructured(
+        settings,
+        lastPdfRegion.imageDataUrl,
+        'auto',
+        (progress) => setOcrProgressText(progress)
+      );
+
+      const now = Date.now();
+      const jsonText = parsed ? JSON.stringify(parsed, null, 2) : raw;
+      const block =
+        `【OCR 结构化结果｜第 ${lastPdfRegion.pageNumber} 页框选区域】\n\n` +
+        `\`\`\`json\n${jsonText}\n\`\`\`\n`;
+
+      // 1) 插入聊天输入框（不自动发送）
+      setUserInput(prev => (prev.trim() ? `${prev}\n\n${block}` : block));
+
+      // 2) 自动存入公式库
+      if (parsed?.formulas?.length) {
+        const newFormulas = parsed.formulas
+          .filter(f => f?.latex && String(f.latex).trim())
+          .slice(0, 20)
+          .map((f, idx) => ({
+            id: `${now}-ocr-formula-${idx}`,
+            latex: String(f.latex).trim(),
+            name: f.name ? String(f.name).trim() : undefined,
+            tags: ['ocr', 'region'],
+            fileId: currentFileId || undefined,
+            fileName: lectureState.file?.name,
+            pageNumber: lastPdfRegion.pageNumber,
+            category: 'other' as const,
+            difficulty: 'intermediate' as const,
+            createdAt: now,
+            updatedAt: now,
+          }));
+
+        if (newFormulas.length) saveFormulas(newFormulas as any);
+      }
+
+      // 3) 自动存入知识库（区域知识点）
+      if (parsed) {
+        const firstLine =
+          (parsed.text || '')
+            .split('\n')
+            .map(s => s.trim())
+            .filter(Boolean)[0] || '框选区域内容（OCR 提取）';
+
+        const examples: string[] = [];
+        parsed.tables?.forEach(t => t?.markdown && examples.push(`表格：\n${t.markdown}`));
+        parsed.charts?.forEach(c => c?.description && examples.push(`图表：${c.description}`));
+
+        saveKnowledgeConcept({
+          id: `${now}-ocr-concept-${lastPdfRegion.pageNumber}`,
+          title: `区域OCR：第${lastPdfRegion.pageNumber}页`,
+          definition: firstLine,
+          details: parsed.text || undefined,
+          examples: examples.length ? examples.slice(0, 8) : undefined,
+          tags: ['ocr', 'region'],
+          fileId: currentFileId || undefined,
+          fileName: lectureState.file?.name,
+          pageNumber: lastPdfRegion.pageNumber,
+          importance: 'medium',
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+    } catch (e) {
+      console.error('One-click OCR failed:', e);
+    } finally {
+      setIsOcrRunning(false);
+    }
+  }, [lastPdfRegion, isOcrRunning, isGenerating, settings, currentFileId, lectureState.file?.name]);
   
   // Regenerate the last response
   const handleRegenerate = async () => {
@@ -1521,6 +1611,41 @@ const App: React.FC = () => {
                     <div className="flex items-center text-xs text-gray-500 ml-2">
                       📷 {chatImages.length} image(s) ready
                     </div>
+                  </div>
+                )}
+                
+                {/* One-click OCR bar (only shown after PDF region selection) */}
+                {lastPdfRegion && (
+                  <div className="mb-3 p-2 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-between gap-3">
+                    <div className="text-xs text-indigo-700">
+                      🎯 已框选第 <b>{lastPdfRegion.pageNumber}</b> 页区域：可一键 OCR（结构化）并自动入库
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={handleOneClickOcr}
+                        disabled={isGenerating || isOcrRunning}
+                        className="bg-indigo-600 hover:bg-indigo-700"
+                      >
+                        {isOcrRunning ? 'OCR中...' : '一键OCR入库'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { setLastPdfRegion(null); setOcrProgressText(''); }}
+                        disabled={isOcrRunning}
+                      >
+                        清除
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {isOcrRunning && ocrProgressText && (
+                  <div className="mb-3 p-2 bg-gray-900 text-gray-100 text-xs rounded-lg max-h-28 overflow-y-auto">
+                    <div className="opacity-70 mb-1">OCR 进度（模型流式输出）：</div>
+                    <pre className="whitespace-pre-wrap">{ocrProgressText.slice(-1500)}</pre>
                   </div>
                 )}
 
