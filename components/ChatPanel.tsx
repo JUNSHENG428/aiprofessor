@@ -1,5 +1,8 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { Message } from '../types';
 
 interface ChatPanelProps {
@@ -7,12 +10,61 @@ interface ChatPanelProps {
   isStreaming: boolean;
 }
 
+/**
+ * 预处理 Markdown 内容，确保 LaTeX 公式格式正确
+ * 处理常见的格式问题
+ */
+const preprocessContent = (content: string): string => {
+  let processed = content;
+  
+  // 1. 修复行内公式中的转义问题 - 将 \\ 转换为 \（在 $ 包裹的公式内）
+  // 这个正则匹配单 $ 包裹的内容，并将双反斜杠替换为单反斜杠
+  processed = processed.replace(/\$([^$]+)\$/g, (match, formula) => {
+    // 将 \\ 替换为 \（除了真正需要换行的情况）
+    const fixed = formula.replace(/\\\\/g, '\\');
+    return `$${fixed}$`;
+  });
+  
+  // 2. 修复块级公式中的转义问题
+  processed = processed.replace(/\$\$([^$]+)\$\$/g, (match, formula) => {
+    const fixed = formula.replace(/\\\\/g, '\\');
+    return `$$${fixed}$$`;
+  });
+  
+  // 3. 确保块级公式前后有换行（帮助解析器识别）
+  processed = processed.replace(/([^\n])\$\$/g, '$1\n$$');
+  processed = processed.replace(/\$\$([^\n])/g, '$$\n$1');
+  
+  return processed;
+};
+
 export const ChatPanel: React.FC<ChatPanelProps> = ({ messages, isStreaming }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isStreaming]);
+
+  // Memoize the remarkPlugins and rehypePlugins arrays to prevent unnecessary re-renders
+  const remarkPlugins = useMemo(() => [remarkGfm, remarkMath], []);
+  const rehypePlugins = useMemo(() => [
+    [rehypeKatex, { 
+      strict: false, // 宽松模式，允许一些非标准 LaTeX
+      throwOnError: false, // 不抛出错误，显示原始文本
+      output: 'htmlAndMathml', // 输出 HTML 和 MathML 以提高可访问性
+      trust: true, // 信任输入
+      macros: {
+        // 常用宏定义
+        "\\R": "\\mathbb{R}",
+        "\\N": "\\mathbb{N}",
+        "\\Z": "\\mathbb{Z}",
+        "\\Q": "\\mathbb{Q}",
+        "\\C": "\\mathbb{C}",
+        "\\vec": "\\mathbf",
+        "\\d": "\\mathrm{d}"
+      }
+    }]
+  ], []);
 
   return (
     <div className="flex-1 overflow-y-auto p-6 bg-white shadow-inner markdown-body">
@@ -47,7 +99,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ messages, isStreaming }) =
                   </div>
                 )}
                 <div className="prose prose-sm md:prose-base max-w-none text-slate-800">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <ReactMarkdown
+                    remarkPlugins={remarkPlugins}
+                    rehypePlugins={rehypePlugins as any}
+                  >
+                    {preprocessContent(msg.content)}
+                  </ReactMarkdown>
                 </div>
               </div>
             </div>

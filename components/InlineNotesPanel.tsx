@@ -1,8 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { Note } from '../types';
 import { Plus, Trash2, Edit3, Save, X, StickyNote, Check, Copy, Download, Clipboard } from 'lucide-react';
+
+// KaTeX 配置
+const katexOptions = {
+  strict: false,
+  throwOnError: false,
+  output: 'htmlAndMathml' as const,
+  trust: true
+};
 
 interface InlineNotesPanelProps {
   isOpen: boolean;
@@ -350,7 +360,10 @@ export const InlineNotesPanel: React.FC<InlineNotesPanelProps> = ({
                     </div>
                   </div>
                   <div className="px-3 py-2 text-xs text-gray-600 max-h-24 overflow-y-auto markdown-body">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm, remarkMath]}
+                      rehypePlugins={[[rehypeKatex, katexOptions] as any]}
+                    >
                       {note.content || '*No content*'}
                     </ReactMarkdown>
                   </div>

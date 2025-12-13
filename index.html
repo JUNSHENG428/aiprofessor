@@ -13,6 +13,9 @@
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
+    <!-- KaTeX CSS for LaTeX formula rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+
     <!-- Markdown Styling -->
     <style>
       /* Custom scrollbar for webkit */
@@ -50,6 +53,36 @@
       .markdown-body th { background-color: #f1f5f9; font-weight: 600; text-align: left; padding: 0.75em; border: 1px solid #e2e8f0; color: #334155; }
       .markdown-body td { padding: 0.75em; border: 1px solid #e2e8f0; color: #475569; vertical-align: top; }
       .markdown-body tr:nth-child(even) { background-color: #fafafa; }
+      
+      /* KaTeX Formula Styling */
+      .markdown-body .katex-display {
+        margin: 1.2em 0;
+        padding: 0.8em 1em;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 0.5em;
+        border-left: 3px solid #6366f1;
+        overflow-x: auto;
+      }
+      .markdown-body .katex {
+        font-size: 1.1em;
+        color: #1e293b;
+      }
+      .markdown-body p .katex {
+        font-size: 1.05em;
+      }
+      /* Inline formula styling */
+      .markdown-body code.math-inline {
+        background: transparent;
+        padding: 0;
+        color: inherit;
+      }
+      /* Make formulas more readable */
+      .katex .mord, .katex .mbin, .katex .mrel {
+        color: #334155;
+      }
+      .katex .mop {
+        color: #4f46e5;
+      }
     </style>
   <script type="importmap">
 {
@@ -61,7 +94,10 @@
     "react/": "https://aistudiocdn.com/react@^19.2.1/",
     "react": "https://aistudiocdn.com/react@^19.2.1",
     "lucide-react": "https://esm.sh/lucide-react@0.300.0?external=react",
-    "remark-gfm": "https://esm.sh/remark-gfm@4.0.0?bundle"
+    "remark-gfm": "https://esm.sh/remark-gfm@4.0.0?bundle",
+    "remark-math": "https://esm.sh/remark-math@6.0.0?bundle",
+    "rehype-katex": "https://esm.sh/rehype-katex@7.0.0?bundle",
+    "katex": "https://esm.sh/katex@0.16.9"
   }
 }
 </script>

@@ -1,8 +1,35 @@
-import React, { useRef, useEffect, useState, memo, useCallback } from 'react';
+import React, { useRef, useEffect, useState, memo, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { Message } from '../types';
 import { Bot, User, Sparkles, Copy, Check, Languages, Volume2, VolumeX, Bookmark, BookmarkCheck } from 'lucide-react';
+
+/**
+ * 预处理 Markdown 内容，确保 LaTeX 公式格式正确
+ */
+const preprocessContent = (content: string): string => {
+  let processed = content;
+  
+  // 修复行内公式中的转义问题
+  processed = processed.replace(/\$([^$]+)\$/g, (match, formula) => {
+    const fixed = formula.replace(/\\\\/g, '\\');
+    return `$${fixed}$`;
+  });
+  
+  // 修复块级公式中的转义问题
+  processed = processed.replace(/\$\$([^$]+)\$\$/g, (match, formula) => {
+    const fixed = formula.replace(/\\\\/g, '\\');
+    return `$$${fixed}$$`;
+  });
+  
+  // 确保块级公式前后有换行
+  processed = processed.replace(/([^\n])\$\$/g, '$1\n$$');
+  processed = processed.replace(/\$\$([^\n])/g, '$$\n$1');
+  
+  return processed;
+};
 
 interface LecturePanelProps {
   messages: Message[];
@@ -19,10 +46,31 @@ interface MessageItemProps {
   onSaveMessage?: (index: number) => void;
 }
 
+// KaTeX 配置
+const katexOptions = {
+  strict: false,
+  throwOnError: false,
+  output: 'htmlAndMathml' as const,
+  trust: true,
+  macros: {
+    "\\R": "\\mathbb{R}",
+    "\\N": "\\mathbb{N}",
+    "\\Z": "\\mathbb{Z}",
+    "\\Q": "\\mathbb{Q}",
+    "\\C": "\\mathbb{C}",
+    "\\vec": "\\mathbf",
+    "\\d": "\\mathrm{d}"
+  }
+};
+
 const MessageItem = memo(({ msg, index, onTranslate, onSaveMessage }: MessageItemProps) => {
   const [copied, setCopied] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  // Memoize plugins to prevent unnecessary re-renders
+  const remarkPlugins = useMemo(() => [remarkGfm, remarkMath], []);
+  const rehypePlugins = useMemo(() => [[rehypeKatex, katexOptions]], []);
 
   const handleCopy = useCallback(async () => {
     try {
@@ -154,27 +202,32 @@ const MessageItem = memo(({ msg, index, onTranslate, onSaveMessage }: MessageIte
              </button>
            </div>
 
-           {msg.role === 'user' ? (
-             <div>
-               {/* User uploaded images */}
-               {msg.images && msg.images.length > 0 && (
-                 <div className="flex flex-wrap gap-2 mb-3">
-                   {msg.images.map((img, imgIndex) => (
-                     <img 
-                       key={imgIndex}
-                       src={img} 
-                       alt={`Uploaded ${imgIndex + 1}`}
-                       className="max-h-32 rounded-lg border border-indigo-400/30 shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
-                       onClick={() => window.open(img, '_blank')}
-                     />
-                   ))}
-                 </div>
-               )}
-               <p className="whitespace-pre-wrap">{msg.content.replace(/\n\n📷 \[\d+ image\(s\) attached\]$/, '')}</p>
-             </div>
-           ) : (
-             <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-           )}
+          {msg.role === 'user' ? (
+            <div>
+              {/* User uploaded images */}
+              {msg.images && msg.images.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {msg.images.map((img, imgIndex) => (
+                    <img 
+                      key={imgIndex}
+                      src={img} 
+                      alt={`Uploaded ${imgIndex + 1}`}
+                      className="max-h-32 rounded-lg border border-indigo-400/30 shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => window.open(img, '_blank')}
+                    />
+                  ))}
+                </div>
+              )}
+              <p className="whitespace-pre-wrap">{msg.content.replace(/\n\n📷 \[\d+ image\(s\) attached\]$/, '')}</p>
+            </div>
+          ) : (
+            <ReactMarkdown 
+              remarkPlugins={remarkPlugins}
+              rehypePlugins={rehypePlugins as any}
+            >
+              {preprocessContent(msg.content)}
+            </ReactMarkdown>
+          )}
          </div>
       </div>
     </div>

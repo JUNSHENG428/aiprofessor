@@ -1,4 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { 
   Layers, Plus, Brain, RotateCcw, Check, X, ChevronLeft, ChevronRight,
   Sparkles, Trash2, Edit3, Clock, Target, Zap, BookOpen, Filter
@@ -13,6 +17,25 @@ import { PROMPTS } from '../constants';
 import { Button } from './Button';
 import { useToast } from './Toast';
 import { useDebounce, useHotkey, useClipboard } from '../hooks/useOptimized';
+
+// KaTeX 配置
+const katexOptions = {
+  strict: false,
+  throwOnError: false,
+  output: 'htmlAndMathml' as const,
+  trust: true
+};
+
+// 简单的公式渲染组件
+const FormulaText: React.FC<{ text: string; className?: string }> = ({ text, className }) => (
+  <ReactMarkdown 
+    remarkPlugins={[remarkGfm, remarkMath]}
+    rehypePlugins={[[rehypeKatex, katexOptions] as any]}
+    className={className}
+  >
+    {text}
+  </ReactMarkdown>
+);
 
 interface FlashcardsPanelProps {
   isOpen: boolean;
@@ -351,12 +374,12 @@ export const FlashcardsPanel: React.FC<FlashcardsPanelProps> = ({
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-800 text-sm line-clamp-2">
-                          {card.front}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1 line-clamp-1">
-                          {card.back}
-                        </p>
+                        <div className="font-medium text-gray-800 text-sm line-clamp-2">
+                          <FormulaText text={card.front} />
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1 line-clamp-1">
+                          <FormulaText text={card.back} />
+                        </div>
                       </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
                         <button 
@@ -425,17 +448,17 @@ export const FlashcardsPanel: React.FC<FlashcardsPanelProps> = ({
                 {!isFlipped ? (
                   <div>
                     <p className="text-xs text-violet-500 mb-2 font-medium">问题</p>
-                    <p className="text-lg font-medium text-gray-800 leading-relaxed">
-                      {currentReviewCard.front}
-                    </p>
+                    <div className="text-lg font-medium text-gray-800 leading-relaxed">
+                      <FormulaText text={currentReviewCard.front} />
+                    </div>
                     <p className="text-xs text-gray-400 mt-4">点击查看答案</p>
                   </div>
                 ) : (
                   <div style={{ transform: 'scaleY(-1)' }}>
                     <p className="text-xs text-green-500 mb-2 font-medium">答案</p>
-                    <p className="text-lg font-medium text-gray-800 leading-relaxed whitespace-pre-wrap">
-                      {currentReviewCard.back}
-                    </p>
+                    <div className="text-lg font-medium text-gray-800 leading-relaxed whitespace-pre-wrap">
+                      <FormulaText text={currentReviewCard.back} />
+                    </div>
                   </div>
                 )}
               </div>
